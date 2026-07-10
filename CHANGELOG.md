@@ -5,7 +5,39 @@ All notable changes to the Gridhouse Employee Compliance Dashboard are documente
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.2.0]
+
+### Performance
+
+- **Per-request memoization.** `get_required_courses()` and
+  `get_compliance_notification()` are now memoized per user for the duration of
+  the request. Previously the full per-course LearnDash query loop ran 3–4×
+  per page load (snapshot build, annual-training check, and the notification
+  banner each recomputed it independently).
+- **Persistent snapshot cache.** The assembled dashboard snapshot is stored in
+  a transient keyed `ghca_ecd_snap_{version}_{user}_{Ymd}` (mirrors the admin
+  dashboard's aggregate cache). The date stamp self-invalidates at site-timezone
+  midnight so day-based countdowns and traffic lights never go stale overnight.
+  Measured locally: 46 queries on a cold render → 0 on a warm render, with
+  byte-identical HTML.
+- New setting **Dashboard cache lifetime** (`ghca_ecd_cache_ttl`, default 600 s,
+  clamp 0–3600, 0 disables caching).
+- The notification banner shortcode now reads from the snapshot instead of
+  recomputing, so cached page loads issue no LearnDash queries at all.
+
+### Added
+
+- **Cache busting** on `learndash_course_completed`,
+  `learndash_update_course_access`, `ld_added_group_access` /
+  `ld_removed_group_access`, and on saves of the due-date, cache-TTL,
+  course-lifespan, warning-days, and new-hire options.
+- Cross-plugin bust: the admin dashboard's Edit Records and Save Employee AJAX
+  handlers (which intentionally skip LearnDash completion hooks to avoid
+  notification emails) now bust the affected employee's snapshot directly.
+- Plain-PHP test harness under `tests/` (`php tests/test-cache-key.php`),
+  following the admin plugin's pattern.
+
+## [1.1.0]
 
 ### Added — Phase 2: Rolling Expirations & Traffic Light
 

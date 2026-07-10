@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Gridhouse Employee Compliance Dashboard
  * Description: Employee compliance home dashboard shortcodes for LearnDash + Elementor.
- * Version: 1.1.0
+ * Version: 1.2.0
  * Author: Gridhouse Digital
  * Author URI: https://gridhouse.digital
  * Text Domain: ghca-ecd
@@ -22,13 +22,20 @@ if ( ! class_exists( 'GHCA_Dashboard_Branding', false ) ) {
 require_once __DIR__ . '/includes/class-ui-icons.php';
 
 final class GHCA_Employee_Compliance_Dashboard {
-  const OPTION_DUE_DATE = 'ghca_compliance_due_date';
-  const VERSION         = '1.1.0';
-  const CYCLE_DAYS      = 365;
-  const NOTICE_DAYS     = 90;
+  const OPTION_DUE_DATE  = 'ghca_compliance_due_date';
+  const OPTION_CACHE_TTL = 'ghca_ecd_cache_ttl';
+  const VERSION          = '1.2.0';
+  const CYCLE_DAYS       = 365;
+  const NOTICE_DAYS      = 90;
 
   /** @var array<string,mixed>|null */
   private static $snapshot = null;
+
+  /** @var array<int,array<int,array<string,mixed>>> Per-request memo, keyed by user ID. */
+  private static $required_courses = array();
+
+  /** @var array<int,array<string,mixed>> Per-request memo, keyed by user ID. */
+  private static $notification = array();
 
   public static function init(): void {
     add_action( 'init', array( __CLASS__, 'register_shortcodes' ) );
@@ -38,6 +45,90 @@ final class GHCA_Employee_Compliance_Dashboard {
     add_action( 'admin_init', array( __CLASS__, 'register_settings' ) );
     add_action( 'admin_menu', array( __CLASS__, 'register_settings_page' ) );
     add_filter( 'learndash-course-row-class', array( __CLASS__, 'inject_traffic_light_class' ), 10, 3 );
+
+    // Cache busting: keep the persistent snapshot honest when LearnDash data
+    // or the options it derives from change.
+    add_action( 'learndash_course_completed', array( __CLASS__, 'on_course_completed' ) );
+    add_action( 'learndash_update_course_access', array( __CLASS__, 'on_course_access_changed' ), 10, 4 );
+    add_action( 'ld_added_group_access', array( __CLASS__, 'on_group_access_changed' ), 10, 2 );
+    add_action( 'ld_removed_group_access', array( __CLASS__, 'on_group_access_changed' ), 10, 2 );
+    add_action( 'update_option_' . self::OPTION_DUE_DATE, array( __CLASS__, 'bust_all_caches' ) );
+    add_action( 'update_option_' . self::OPTION_CACHE_TTL, array( __CLASS__, 'bust_all_caches' ) );
+
+    if ( class_exists( 'GHCA_Course_Lifespans' ) ) {
+      add_action( 'update_option_' . GHCA_Course_Lifespans::OPTION_LIFESPANS, array( __CLASS__, 'bust_all_caches' ) );
+      add_action( 'update_option_' . GHCA_Course_Lifespans::OPTION_WARNING_DAYS, array( __CLASS__, 'bust_all_caches' ) );
+    }
+    if ( class_exists( 'GHCA_Compliance_Program' ) ) {
+      add_action( 'update_option_' . GHCA_Compliance_Program::OPTION_NEW_HIRE_GROUPS, array( __CLASS__, 'bust_all_caches' ) );
+      add_action( 'update_option_' . GHCA_Compliance_Program::OPTION_NEW_HIRE_DAYS, array( __CLASS__, 'bust_all_caches' ) );
+    }
+  }
+
+  /** @param array<string,mixed> $data LearnDash completion payload; $data['user'] is a WP_User. */
+  public static function on_course_completed( $data ): void {
+    if ( is_array( $data ) && ! empty( $data['user'] ) && $data['user'] instanceof WP_User ) {
+      self::bust_cache( (int) $data['user']->ID );
+    }
+  }
+
+  /** @param array<int,mixed> $access_list */
+  public static function on_course_access_changed( $user_id, $course_id = 0, $access_list = array(), $remove = false ): void {
+    self::bust_cache( (int) $user_id );
+  }
+
+  public static function on_group_access_changed( $user_id, $group_id = 0 ): void {
+    self::bust_cache( (int) $user_id );
+  }
+
+  /**
+   * Pure key builder so the format is unit-testable without WordPress.
+   * The Ymd stamp (site timezone) makes the snapshot self-invalidate at local
+   * midnight, so day-based countdowns and traffic lights recompute with no DB write.
+   */
+  public static function build_cache_key( string $version, int $user_id, string $ymd ): string {
+    return 'ghca_ecd_snap_' . $version . '_' . $user_id . '_' . $ymd;
+  }
+
+  private static function get_cache_key( int $user_id ): string {
+    return self::build_cache_key( self::VERSION, $user_id, (string) wp_date( 'Ymd' ) );
+  }
+
+  public static function get_cache_ttl(): int {
+    $ttl = (int) get_option( self::OPTION_CACHE_TTL, 600 );
+    return max( 0, min( 3600, $ttl ) );
+  }
+
+  /** Delete one user's snapshot for today and reset the request-scoped memos. */
+  public static function bust_cache( int $user_id ): void {
+    if ( $user_id <= 0 ) {
+      return;
+    }
+    delete_transient( self::get_cache_key( $user_id ) );
+    unset( self::$required_courses[ $user_id ], self::$notification[ $user_id ] );
+    if ( null !== self::$snapshot && (int) ( self::$snapshot['user_id'] ?? 0 ) === $user_id ) {
+      self::$snapshot = null;
+    }
+  }
+
+  /** Delete every stored snapshot (option-level changes affect all users). */
+  public static function bust_all_caches(): void {
+    global $wpdb;
+    // Delete through the transient API (not raw SQL) so the in-request options
+    // cache is cleared too — otherwise a bust fired mid-request would still
+    // serve the stale snapshot for the rest of that request.
+    $names = $wpdb->get_col(
+      $wpdb->prepare(
+        "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s",
+        $wpdb->esc_like( '_transient_ghca_ecd_snap_' ) . '%'
+      )
+    );
+    foreach ( (array) $names as $name ) {
+      delete_transient( substr( (string) $name, strlen( '_transient_' ) ) );
+    }
+    self::$snapshot         = null;
+    self::$required_courses = array();
+    self::$notification     = array();
   }
 
   /**
@@ -163,6 +254,21 @@ final class GHCA_Employee_Compliance_Dashboard {
         'default'           => '2026-07-31',
       )
     );
+
+    register_setting(
+      'ghca_employee_dashboard',
+      self::OPTION_CACHE_TTL,
+      array(
+        'type'              => 'integer',
+        'sanitize_callback' => array( __CLASS__, 'sanitize_cache_ttl' ),
+        'default'           => 600,
+      )
+    );
+  }
+
+  /** @param mixed $value */
+  public static function sanitize_cache_ttl( $value ): int {
+    return max( 0, min( 3600, (int) $value ) );
   }
 
   public static function sanitize_due_date( string $value ): string {
@@ -198,6 +304,13 @@ final class GHCA_Employee_Compliance_Dashboard {
           <tr>
             <th scope="row"><label for="ghca_compliance_due_date"><?php esc_html_e( 'Compliance due date', 'ghca-ecd' ); ?></label></th>
             <td><input type="date" id="ghca_compliance_due_date" name="<?php echo esc_attr( self::OPTION_DUE_DATE ); ?>" value="<?php echo esc_attr( $due ); ?>" class="regular-text" /></td>
+          </tr>
+          <tr>
+            <th scope="row"><label for="ghca_ecd_cache_ttl"><?php esc_html_e( 'Dashboard cache lifetime (seconds)', 'ghca-ecd' ); ?></label></th>
+            <td>
+              <input type="number" id="ghca_ecd_cache_ttl" name="<?php echo esc_attr( self::OPTION_CACHE_TTL ); ?>" value="<?php echo esc_attr( (string) self::get_cache_ttl() ); ?>" min="0" max="3600" step="1" class="small-text" />
+              <p class="description"><?php esc_html_e( 'How long each employee\'s dashboard snapshot is cached (0 disables caching, max 3600). The cache also refreshes automatically at midnight and whenever training data changes.', 'ghca-ecd' ); ?></p>
+            </td>
           </tr>
         </table>
         <?php submit_button(); ?>
@@ -240,12 +353,15 @@ final class GHCA_Employee_Compliance_Dashboard {
       return '';
     }
 
-    $notice = self::get_compliance_notification( get_current_user_id() );
+    // Read the notification off the snapshot so a transient-cached page load
+    // never re-runs the LearnDash course loop just for this banner.
+    $data   = self::get_snapshot();
+    $notice = is_array( $data['compliance_notification'] ?? null )
+      ? $data['compliance_notification']
+      : self::get_compliance_notification( get_current_user_id() );
     if ( empty( $notice['show'] ) ) {
       return '';
     }
-
-    $data = self::get_snapshot();
     ob_start();
     ?>
     <div class="ghca-ecd ghca-ecd--notification">
@@ -810,7 +926,17 @@ final class GHCA_Employee_Compliance_Dashboard {
       return self::$snapshot;
     }
 
-    $user_id         = get_current_user_id();
+    $user_id = get_current_user_id();
+    $ttl     = self::get_cache_ttl();
+
+    if ( $ttl > 0 ) {
+      $cached = get_transient( self::get_cache_key( $user_id ) );
+      if ( is_array( $cached ) && (int) ( $cached['user_id'] ?? 0 ) === $user_id ) {
+        self::$snapshot = $cached;
+        return self::$snapshot;
+      }
+    }
+
     $user            = get_userdata( $user_id );
     $new_hire        = self::get_new_hire_status( $user_id );
     $courses         = ( ! empty( $new_hire['active'] ) && empty( $new_hire['complete'] ) )
@@ -930,6 +1056,10 @@ final class GHCA_Employee_Compliance_Dashboard {
       'new_hire_flagged'          => ! empty( $new_hire['flagged'] ),
     );
 
+    if ( $ttl > 0 ) {
+      set_transient( self::get_cache_key( $user_id ), self::$snapshot, $ttl );
+    }
+
     return self::$snapshot;
   }
 
@@ -937,6 +1067,10 @@ final class GHCA_Employee_Compliance_Dashboard {
   private static function get_required_courses( int $user_id ): array {
     if ( ! function_exists( 'learndash_user_get_enrolled_courses' ) ) {
       return array();
+    }
+
+    if ( isset( self::$required_courses[ $user_id ] ) ) {
+      return self::$required_courses[ $user_id ];
     }
 
     $course_ids = array_map( 'intval', (array) learndash_user_get_enrolled_courses( $user_id ) );
@@ -995,6 +1129,8 @@ final class GHCA_Employee_Compliance_Dashboard {
         return $a['sort_order'] <=> $b['sort_order'];
       }
     );
+
+    self::$required_courses[ $user_id ] = $items;
 
     return $items;
   }
@@ -1187,6 +1323,17 @@ final class GHCA_Employee_Compliance_Dashboard {
 
   /** @param array<string,mixed> $new_hire @return array<string,mixed> */
   private static function get_compliance_notification( int $user_id, array $new_hire = array() ): array {
+    if ( isset( self::$notification[ $user_id ] ) ) {
+      return self::$notification[ $user_id ];
+    }
+
+    self::$notification[ $user_id ] = self::compute_compliance_notification( $user_id, $new_hire );
+
+    return self::$notification[ $user_id ];
+  }
+
+  /** @param array<string,mixed> $new_hire @return array<string,mixed> */
+  private static function compute_compliance_notification( int $user_id, array $new_hire = array() ): array {
     if ( empty( $new_hire ) ) {
       $new_hire = self::get_new_hire_status( $user_id );
     }
