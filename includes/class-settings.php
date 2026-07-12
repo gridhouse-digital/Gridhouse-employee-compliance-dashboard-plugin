@@ -15,6 +15,7 @@ final class GHCA_ECD_Settings {
     // Option-level changes affect every user's snapshot.
     add_action( 'update_option_' . GHCA_Employee_Compliance_Dashboard::OPTION_DUE_DATE, array( 'GHCA_ECD_Data_Provider', 'bust_all_caches' ) );
     add_action( 'update_option_' . GHCA_Employee_Compliance_Dashboard::OPTION_CACHE_TTL, array( 'GHCA_ECD_Data_Provider', 'bust_all_caches' ) );
+    add_action( 'update_option_' . GHCA_Employee_Compliance_Dashboard::OPTION_START_GROUPS, array( 'GHCA_ECD_Data_Provider', 'bust_all_caches' ) );
 
     if ( class_exists( 'GHCA_Course_Lifespans' ) ) {
       add_action( 'update_option_' . GHCA_Course_Lifespans::OPTION_LIFESPANS, array( 'GHCA_ECD_Data_Provider', 'bust_all_caches' ) );
@@ -46,6 +47,67 @@ final class GHCA_ECD_Settings {
         'default'           => 600,
       )
     );
+
+    register_setting(
+      'ghca_employee_dashboard',
+      GHCA_Employee_Compliance_Dashboard::OPTION_START_GROUPS,
+      array(
+        'type'              => 'array',
+        'sanitize_callback' => array( __CLASS__, 'sanitize_start_group_ids' ),
+      )
+    );
+  }
+
+  /** @var array<int> Historical hardcoded groups, kept as the pre-option default. */
+  const DEFAULT_START_GROUP_IDS = array( 54, 1428 );
+
+  /** @param mixed $value @return array<int> */
+  public static function sanitize_start_group_ids( $value ): array {
+    if ( ! is_array( $value ) ) {
+      return array();
+    }
+
+    return array_values( array_unique( array_filter( array_map( 'intval', $value ), static function ( int $id ): bool {
+      return $id > 0;
+    } ) ) );
+  }
+
+  /**
+   * Pure resolution so the default-vs-cleared distinction is unit-testable:
+   * option never saved => historical default; saved (even empty) => as saved.
+   *
+   * @param mixed $raw The raw get_option() value (false when unset).
+   * @return array<int>
+   */
+  public static function resolve_start_group_ids( $raw ): array {
+    if ( ! is_array( $raw ) ) {
+      return self::DEFAULT_START_GROUP_IDS;
+    }
+
+    return self::sanitize_start_group_ids( $raw );
+  }
+
+  /** @return array<int> LearnDash group IDs whose enrollment stamps seed the compliance cycle start. */
+  public static function get_start_group_ids(): array {
+    return self::resolve_start_group_ids( get_option( GHCA_Employee_Compliance_Dashboard::OPTION_START_GROUPS, false ) );
+  }
+
+  /** @return array<int,\WP_Post> */
+  private static function get_learndash_groups(): array {
+    $posts = get_posts(
+      array(
+        'post_type'              => 'groups',
+        'post_status'            => 'publish',
+        'posts_per_page'         => 200,
+        'orderby'                => 'title',
+        'order'                  => 'ASC',
+        'no_found_rows'          => true,
+        'update_post_meta_cache' => false,
+        'update_post_term_cache' => false,
+      )
+    );
+
+    return is_array( $posts ) ? $posts : array();
   }
 
   public static function sanitize_due_date( string $value ): string {
@@ -81,7 +143,9 @@ final class GHCA_ECD_Settings {
       return;
     }
 
-    $due = get_option( GHCA_Employee_Compliance_Dashboard::OPTION_DUE_DATE, '2026-07-31' );
+    $due             = get_option( GHCA_Employee_Compliance_Dashboard::OPTION_DUE_DATE, '2026-07-31' );
+    $start_group_ids = self::get_start_group_ids();
+    $groups          = self::get_learndash_groups();
     ?>
     <div class="wrap">
       <h1><?php esc_html_e( 'Employee Compliance Dashboard', 'ghca-ecd' ); ?></h1>
@@ -91,6 +155,30 @@ final class GHCA_ECD_Settings {
           <tr>
             <th scope="row"><label for="ghca_compliance_due_date"><?php esc_html_e( 'Compliance due date', 'ghca-ecd' ); ?></label></th>
             <td><input type="date" id="ghca_compliance_due_date" name="<?php echo esc_attr( GHCA_Employee_Compliance_Dashboard::OPTION_DUE_DATE ); ?>" value="<?php echo esc_attr( $due ); ?>" class="regular-text" /></td>
+          </tr>
+          <tr>
+            <th scope="row"><?php esc_html_e( 'Cycle start groups', 'ghca-ecd' ); ?></th>
+            <td>
+              <?php if ( empty( $groups ) ) : ?>
+                <p><?php esc_html_e( 'No LearnDash groups found.', 'ghca-ecd' ); ?></p>
+              <?php else : ?>
+                <fieldset>
+                  <?php foreach ( $groups as $group ) : ?>
+                    <label style="display:block;margin:0 0 8px;">
+                      <input
+                        type="checkbox"
+                        name="<?php echo esc_attr( GHCA_Employee_Compliance_Dashboard::OPTION_START_GROUPS ); ?>[]"
+                        value="<?php echo esc_attr( (string) $group->ID ); ?>"
+                        <?php checked( in_array( (int) $group->ID, $start_group_ids, true ) ); ?>
+                      />
+                      <?php echo esc_html( $group->post_title ); ?>
+                      <code>#<?php echo esc_html( (string) $group->ID ); ?></code>
+                    </label>
+                  <?php endforeach; ?>
+                </fieldset>
+              <?php endif; ?>
+              <p class="description"><?php esc_html_e( 'The earliest enrollment date across these LearnDash groups (or the account registration date, whichever is earliest) starts each employee\'s annual compliance cycle. If none are selected, only the registration date is used.', 'ghca-ecd' ); ?></p>
+            </td>
           </tr>
           <tr>
             <th scope="row"><label for="ghca_ecd_cache_ttl"><?php esc_html_e( 'Dashboard cache lifetime (seconds)', 'ghca-ecd' ); ?></label></th>

@@ -620,7 +620,14 @@ final class GHCA_ECD_Data_Provider {
 
     $candidates = array( strtotime( $user->user_registered ) );
 
-    foreach ( array( 54, 1428 ) as $group_id ) {
+    /** @var array<int> $group_ids */
+    $group_ids = apply_filters( 'ghca_ecd_start_group_ids', GHCA_ECD_Settings::get_start_group_ids() );
+
+    foreach ( $group_ids as $group_id ) {
+      $group_id = (int) $group_id;
+      if ( $group_id <= 0 ) {
+        continue;
+      }
       foreach ( array(
         'group_' . $group_id . '_access_from',
         'learndash_group_' . $group_id . '_enrolled_at',

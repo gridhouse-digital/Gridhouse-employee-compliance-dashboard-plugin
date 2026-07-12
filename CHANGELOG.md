@@ -5,6 +5,25 @@ All notable changes to the Gridhouse Employee Compliance Dashboard are documente
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1]
+
+### Added
+
+- **Cycle start groups setting** (`ghca_ecd_start_group_ids`). The LearnDash
+  group IDs used to detect an employee's platform start date were hardcoded
+  (`54`, `1428`); they are now a checkbox list on the settings page. The
+  historical IDs remain the default until the option is first saved, so
+  existing sites see no behavior change. Clearing every checkbox falls back to
+  the account registration date only. Also filterable via
+  `ghca_ecd_start_group_ids`. Saving the option busts all snapshot caches.
+- Test: `php tests/test-start-groups.php` (sanitizer + default-vs-cleared
+  resolution).
+
+### Docs
+
+- README: documented all three settings and the test harness; admin plugin
+  README version corrected (was stale at 1.1.0 while the plugin is 1.2.0).
+
 ## [1.3.0]
 
 ### Changed

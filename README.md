@@ -30,7 +30,28 @@ Any logged-in user can view the dashboard. Course data is scoped to the current 
 
 WP Admin → Settings → Employee Dashboard
 
-- Compliance due date (fallback annual due date, `Y-m-d`)
+- **Compliance due date** — fallback annual due date (`Y-m-d`), used when no
+  cycle can be computed from the employee's start date.
+- **Cycle start groups** — LearnDash groups whose enrollment stamps
+  (`group_{id}_access_from` / `learndash_group_{id}_enrolled_at`) seed the
+  annual compliance cycle start. The earliest of these stamps and the account
+  registration date wins. Defaults to the historical groups `#54` and `#1428`
+  until first saved; clearing all checkboxes falls back to registration date
+  only. Filterable via `ghca_ecd_start_group_ids`.
+- **Dashboard cache lifetime** — how long each employee's dashboard snapshot
+  is cached (seconds, default 600, 0 disables). The cache also self-refreshes
+  at site-timezone midnight and busts automatically on course completion,
+  enrollment changes, and relevant option saves.
+
+## Tests
+
+Plain-PHP test scripts (no WordPress needed):
+
+```
+php tests/test-cache-key.php
+php tests/test-split-smoke.php
+php tests/test-start-groups.php
+```
 
 ## Training status & rolling expirations
 
@@ -71,6 +92,7 @@ dot on `.ld-course-title::before`:
 ## Filters
 
 - `ghca_compliance_due_date` — annual compliance due date
+- `ghca_ecd_start_group_ids` — LearnDash group IDs used for cycle-start detection
 - `ghca_employee_quick_links` — quick link cards
 - `ghca_employee_announcements_items` — announcement items
 - `ghca_employee_handbook_url` — handbook quick-link target

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Gridhouse Employee Compliance Dashboard
  * Description: Employee compliance home dashboard shortcodes for LearnDash + Elementor.
- * Version: 1.3.0
+ * Version: 1.3.1
  * Author: Gridhouse Digital
  * Author URI: https://gridhouse.digital
  * Text Domain: ghca-ecd
@@ -27,9 +27,10 @@ require_once __DIR__ . '/includes/class-ui-icons.php';
  * settings page in GHCA_ECD_Settings.
  */
 final class GHCA_Employee_Compliance_Dashboard {
-  const OPTION_DUE_DATE  = 'ghca_compliance_due_date';
-  const OPTION_CACHE_TTL = 'ghca_ecd_cache_ttl';
-  const VERSION          = '1.3.0';
+  const OPTION_DUE_DATE     = 'ghca_compliance_due_date';
+  const OPTION_CACHE_TTL    = 'ghca_ecd_cache_ttl';
+  const OPTION_START_GROUPS = 'ghca_ecd_start_group_ids';
+  const VERSION             = '1.3.1';
   const CYCLE_DAYS       = 365;
   const NOTICE_DAYS      = 90;
 
