@@ -5,6 +5,26 @@ All notable changes to the Gridhouse Employee Compliance Dashboard are documente
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0]
+
+### Changed
+
+- **Architecture split (no behavior change).** The single-file god class was
+  decomposed following the admin plugin's Phase-6 recipe:
+  - `includes/class-data-provider.php` — `GHCA_ECD_Data_Provider`: snapshot,
+    required courses, compliance cycle, notification, new-hire mapping,
+    certificate URL lookup, and all caching/bust logic.
+  - `includes/class-shortcodes.php` — `GHCA_ECD_Shortcodes`: all 11 shortcode
+    renderers, action items, quick links, announcements.
+  - `includes/class-settings.php` — `GHCA_ECD_Settings`: settings page,
+    sanitizers, option accessors, option-save bust hooks.
+  - The main plugin file is now a slim bootstrap (constants, asset enqueue,
+    page detection, traffic-light filter) plus `bust_cache`/`bust_all_caches`
+    delegating wrappers kept for the admin plugin's cross-plugin calls.
+- Verified byte-identical shortcode output before vs after the split
+  (sha1-matched golden render of all 11 shortcodes for a real user).
+- New smoke test: `php tests/test-split-smoke.php`.
+
 ## [1.2.0]
 
 ### Performance
