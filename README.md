@@ -21,6 +21,7 @@ Employee-facing home dashboard for LearnDash compliance training, built for Elem
 | `[employee_compliance_trio]` | Next course + actions + announcements row |
 | `[employee_compliance_quick_links]` | Quick link cards |
 | `[employee_compliance_support]` | Support contact box |
+| `[employee_certificate_packet]` | "Download my certificate packet" card (requires the admin plugin; hidden until the first certificate is earned) |
 
 ## Access
 
@@ -51,6 +52,7 @@ Plain-PHP test scripts (no WordPress needed):
 php tests/test-cache-key.php
 php tests/test-split-smoke.php
 php tests/test-start-groups.php
+php tests/test-cert-packet-guard.php
 ```
 
 ## Training status & rolling expirations
@@ -86,7 +88,7 @@ dot on `.ld-course-title::before`:
 ## Integrations
 
 - **LearnDash** — enrolled courses, progress, completion, certificates
-- **Admin Compliance Dashboard** — `GHCA_Course_Lifespans` (rolling expirations), `GHCA_Compliance_Program` (new-hire windows), `GHCA_Dashboard_Branding` (theme colors / support email)
+- **Admin Compliance Dashboard** — `GHCA_Course_Lifespans` (rolling expirations), `GHCA_Compliance_Program` (new-hire windows), `GHCA_Dashboard_Branding` (theme colors / support email), `GHCA_Audit_PDF` + `GHCA_Audit_PDF_Jobs` (certificate packet builder)
 - **Elementor** — page layout via shortcode widgets
 
 ## Filters

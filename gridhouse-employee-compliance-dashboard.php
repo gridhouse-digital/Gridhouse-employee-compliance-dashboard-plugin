@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Gridhouse Employee Compliance Dashboard
  * Description: Employee compliance home dashboard shortcodes for LearnDash + Elementor.
- * Version: 1.3.1
+ * Version: 1.4.0
  * Author: Gridhouse Digital
  * Author URI: https://gridhouse.digital
  * Text Domain: ghca-ecd
@@ -30,7 +30,7 @@ final class GHCA_Employee_Compliance_Dashboard {
   const OPTION_DUE_DATE     = 'ghca_compliance_due_date';
   const OPTION_CACHE_TTL    = 'ghca_ecd_cache_ttl';
   const OPTION_START_GROUPS = 'ghca_ecd_start_group_ids';
-  const VERSION             = '1.3.1';
+  const VERSION             = '1.4.0';
   const CYCLE_DAYS       = 365;
   const NOTICE_DAYS      = 90;
 
@@ -38,6 +38,7 @@ final class GHCA_Employee_Compliance_Dashboard {
     GHCA_ECD_Settings::init();
     GHCA_ECD_Data_Provider::init();
     GHCA_ECD_Shortcodes::init();
+    GHCA_ECD_Cert_Packet::init();
 
     add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
     add_filter( 'body_class', array( __CLASS__, 'add_body_class' ) );
@@ -108,6 +109,31 @@ final class GHCA_Employee_Compliance_Dashboard {
     if ( class_exists( 'GHCA_Dashboard_Branding', false ) ) {
       wp_add_inline_style( 'ghca-employee-dashboard', GHCA_Dashboard_Branding::get_inline_css() );
     }
+
+    if ( GHCA_ECD_Cert_Packet::is_available() && is_user_logged_in() ) {
+      wp_enqueue_script(
+        'ghca-employee-dashboard',
+        plugin_dir_url( __FILE__ ) . 'assets/dashboard.js',
+        array(),
+        self::VERSION,
+        true
+      );
+      wp_localize_script(
+        'ghca-employee-dashboard',
+        'ghcaEcd',
+        array(
+          'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+          'nonce'   => wp_create_nonce( GHCA_ECD_Cert_Packet::NONCE_ACTION ),
+          'i18n'    => array(
+            'preparing' => __( 'Preparing your packet…', 'ghca-ecd' ),
+            'fetching'  => __( 'Fetching certificate %1$s of %2$s…', 'ghca-ecd' ),
+            'merging'   => __( 'Merging documents…', 'ghca-ecd' ),
+            'done'      => __( 'Done! Starting download…', 'ghca-ecd' ),
+            'error'     => __( 'Packet generation failed. No packet was created. Please try again.', 'ghca-ecd' ),
+          ),
+        )
+      );
+    }
   }
 
   /** @param array<int,string> $classes */
@@ -124,8 +150,9 @@ final class GHCA_Employee_Compliance_Dashboard {
     return $classes;
   }
 
-  private static function page_uses_dashboard( WP_Post $post ): bool {
+  public static function page_uses_dashboard( WP_Post $post ): bool {
     $tags = array(
+      'employee_certificate_packet',
       'employee_compliance_login_gate',
       'employee_compliance_notification',
       'employee_compliance_welcome',
@@ -153,5 +180,6 @@ final class GHCA_Employee_Compliance_Dashboard {
 require_once __DIR__ . '/includes/class-settings.php';
 require_once __DIR__ . '/includes/class-data-provider.php';
 require_once __DIR__ . '/includes/class-shortcodes.php';
+require_once __DIR__ . '/includes/class-cert-packet.php';
 
 GHCA_Employee_Compliance_Dashboard::init();

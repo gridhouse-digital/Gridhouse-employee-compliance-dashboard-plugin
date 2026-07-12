@@ -46,9 +46,10 @@ $expected = array(
   'employee_compliance_support',
   'employee_compliance_trio',
   'employee_compliance_dashboard',
+  'employee_certificate_packet',
 );
 
-check( '11 shortcodes registered', count( $GLOBALS['ghca_test_shortcodes'] ) === 11 );
+check( '12 shortcodes registered', count( $GLOBALS['ghca_test_shortcodes'] ) === 12 );
 
 foreach ( $expected as $tag ) {
   $cb = $GLOBALS['ghca_test_shortcodes'][ $tag ] ?? null;

@@ -1095,3 +1095,79 @@
   background-color: var(--ghca-danger);
 }
 
+
+
+/* ============ Certificate packet: progress modal ============ */
+.ghca-ecd__pdf-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ghca-ecd__pdf-modal[hidden] {
+  display: none;
+}
+
+.ghca-ecd__pdf-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 34, 53, 0.55);
+}
+
+.ghca-ecd__pdf-modal-dialog {
+  position: relative;
+  width: min(440px, calc(100vw - 32px));
+  background: var(--ghca-white);
+  border-radius: var(--ghca-radius);
+  box-shadow: var(--ghca-shadow-lg);
+  padding: 28px;
+}
+
+.ghca-ecd__pdf-modal-dialog h2 {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ghca-ink);
+}
+
+.ghca-ecd__pdf-modal-status {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: var(--ghca-muted);
+}
+
+.ghca-ecd__pdf-progress {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--ghca-border);
+  overflow: hidden;
+}
+
+.ghca-ecd__pdf-progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: var(--ghca-primary);
+  transition: width 0.25s ease;
+}
+
+.ghca-ecd__pdf-progress-fill.is-error {
+  background: var(--ghca-danger);
+}
+
+.ghca-ecd__pdf-modal-footer {
+  margin-top: 18px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ghca-ecd__btn--packet {
+  margin-top: 10px;
+}
+
+.ghca-ecd__panel--packet {
+  max-width: 560px;
+}

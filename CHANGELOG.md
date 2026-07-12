@@ -5,6 +5,37 @@ All notable changes to the Gridhouse Employee Compliance Dashboard are documente
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0]
+
+### Added — Self-service certificate packet
+
+- **"Download my certificate packet"**: a logged-in employee can download a
+  single merged PDF containing a summary cover page (course / completed on /
+  valid until table, compliance status, cycle due date) followed by every
+  certificate they have earned. Button appears in the welcome card and via a
+  new `[employee_certificate_packet]` shortcode — both render nothing when no
+  certificates exist yet.
+- Client-driven async build with a progress modal (`assets/dashboard.js`, the
+  plugin's first JavaScript): init → fetch one certificate at a time → merge →
+  download, adapted from the admin plugin's packet builder.
+- **Reuses the admin plugin's PDF machinery** (`GHCA_Audit_PDF_Jobs` job store
+  with hardened upload dirs and GC; TCPDF/FPDI loading and page merging from
+  `GHCA_Audit_PDF`) as a soft dependency: when the admin plugin is inactive
+  the button, endpoints, and script are simply absent — no fatals.
+- **Strictly self-scoped security**: own nonce (`ghca_ecd_pkt`); no user id is
+  ever read from the request; jobs are created with owner = target = the
+  current user and tagged `tracker: employee`; every phase re-validates
+  ownership *and* self-scope (an admin-created audit job cannot be replayed
+  through these endpoints, and vice versa). One active build per user
+  (5-minute lock) prevents request stacking.
+- **ABORT policy inherited from the admin packet**: any failed certificate
+  fetch or merge deletes the whole job — a packet is never produced with a
+  certificate silently missing.
+- Test: `php tests/test-cert-packet-guard.php` (job-id validation, manifest
+  owner/expiry, self-scope matrix). Live-verified: bad nonce rejected,
+  cross-user job replay rejected, double-click rate-limited, abort cleans the
+  job and releases the lock.
+
 ## [1.3.1]
 
 ### Added

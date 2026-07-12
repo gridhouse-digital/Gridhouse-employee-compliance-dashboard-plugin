@@ -27,6 +27,7 @@ final class GHCA_ECD_Shortcodes {
       'employee_compliance_support'       => 'render_support',
       'employee_compliance_trio'          => 'render_trio',
       'employee_compliance_dashboard'     => 'render_full_dashboard',
+      'employee_certificate_packet'       => 'render_certificate_packet',
     );
 
     foreach ( $map as $tag => $method ) {
@@ -143,6 +144,9 @@ final class GHCA_ECD_Shortcodes {
             <span class="ghca-ecd__badge ghca-ecd__badge--success"><?php esc_html_e( 'All training complete', 'ghca-ecd' ); ?></span>
           <?php else : ?>
             <a class="ghca-ecd__btn ghca-ecd__btn--ghost" href="<?php echo esc_url( $data['continue_url'] ); ?>"><?php esc_html_e( 'Continue Training', 'ghca-ecd' ); ?> <?php echo GHCA_ECD_UI_Icons::render( 'chevron_right', 'ghca-ecd__btn-icon' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></a>
+          <?php endif; ?>
+          <?php if ( GHCA_ECD_Cert_Packet::is_available() && GHCA_ECD_Cert_Packet::has_certificates() ) : ?>
+            <button type="button" class="ghca-ecd__btn ghca-ecd__btn--ghost ghca-ecd__btn--packet" data-ghca-ecd-packet><?php echo GHCA_ECD_UI_Icons::render( 'award', 'ghca-ecd__btn-icon' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?> <?php esc_html_e( 'Download my certificate packet', 'ghca-ecd' ); ?></button>
           <?php endif; ?>
         </div>
       </div>
@@ -648,6 +652,27 @@ final class GHCA_ECD_Shortcodes {
 
   public static function can_view_dashboard(): bool {
     return is_user_logged_in();
+  }
+
+  /** Standalone packet-download card; renders nothing when the feature is unavailable or no certificates exist. */
+  public static function render_certificate_packet( $atts = array() ): string {
+    if ( ! self::can_view_dashboard() || ! GHCA_ECD_Cert_Packet::is_available() || ! GHCA_ECD_Cert_Packet::has_certificates() ) {
+      return '';
+    }
+
+    ob_start();
+    ?>
+    <div class="ghca-ecd ghca-ecd--packet">
+      <div class="ghca-ecd__panel ghca-ecd__panel--packet">
+        <div class="ghca-ecd__panel-head">
+          <h2><?php esc_html_e( 'Certificate Packet', 'ghca-ecd' ); ?></h2>
+        </div>
+        <p class="ghca-ecd__panel-sub"><?php esc_html_e( 'Download all of your earned certificates as a single PDF, with a summary cover page.', 'ghca-ecd' ); ?></p>
+        <button type="button" class="ghca-ecd__btn ghca-ecd__btn--primary" data-ghca-ecd-packet><?php echo GHCA_ECD_UI_Icons::render( 'award', 'ghca-ecd__btn-icon' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?> <?php esc_html_e( 'Download my certificate packet', 'ghca-ecd' ); ?></button>
+      </div>
+    </div>
+    <?php
+    return (string) ob_get_clean();
   }
 
   /** @return array<int,array{label:string,done:bool}> */
