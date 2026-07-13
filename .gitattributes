@@ -1,0 +1,8 @@
+# The repo's PHP files are CRLF and shortcode HTML is emitted with the
+# source file's line endings (ob_start template blocks), so golden-output
+# byte comparisons depend on endings staying stable across checkouts.
+* text=auto
+*.php text eol=crlf
+*.css text eol=crlf
+*.js text eol=crlf
+*.md text eol=crlf

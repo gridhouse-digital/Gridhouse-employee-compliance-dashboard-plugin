@@ -105,9 +105,21 @@ final class GHCA_ECD_Cert_Packet {
     return $certs;
   }
 
-  /** Used by the shortcode/welcome button so we never render a dead button. */
+  /** Used by the shortcode/card buttons so we never render a dead button. */
   public static function has_certificates(): bool {
-    return is_user_logged_in() && count( self::collect_certificates( get_current_user_id() ) ) > 0;
+    if ( ! is_user_logged_in() ) {
+      return false;
+    }
+
+    // Prefer the snapshot (may be served from the transient cache) so cached
+    // page loads stay query-free; fall back to a live count for snapshots
+    // written by plugin versions that predate packet_certificate_count.
+    $snapshot = GHCA_ECD_Data_Provider::get_snapshot();
+    if ( isset( $snapshot['packet_certificate_count'] ) ) {
+      return (int) $snapshot['packet_certificate_count'] > 0;
+    }
+
+    return count( self::collect_certificates( get_current_user_id() ) ) > 0;
   }
 
   private static function build_filename( int $user_id ): string {
@@ -122,10 +134,14 @@ final class GHCA_ECD_Cert_Packet {
 
     $user_id = get_current_user_id();
 
-    // One active build per user: prevents a double-click (or a hammering
-    // client) from stacking up remote certificate fetches.
-    if ( get_transient( self::ACTIVE_JOB_TRANSIENT . $user_id ) ) {
-      wp_send_json_error( array( 'message' => __( 'A packet is already being generated. Please wait a moment and try again.', 'ghca-ecd' ) ), 429 );
+    // One active build per user. The lock always references this user's own
+    // previous job, so instead of locking them out (a cancelled modal used to
+    // block retries for up to 5 minutes) we kill the abandoned build and
+    // start fresh — deleting the manifest also terminates any still-running
+    // fetch loop for it on its next phase.
+    $previous_job = get_transient( self::ACTIVE_JOB_TRANSIENT . $user_id );
+    if ( is_string( $previous_job ) && GHCA_Audit_PDF_Jobs::is_valid_job_id( $previous_job ) ) {
+      GHCA_Audit_PDF_Jobs::delete_job( $previous_job );
     }
 
     GHCA_Audit_PDF_Jobs::gc();

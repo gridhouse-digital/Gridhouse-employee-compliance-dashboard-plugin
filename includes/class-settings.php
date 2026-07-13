@@ -12,18 +12,25 @@ final class GHCA_ECD_Settings {
     add_action( 'admin_init', array( __CLASS__, 'register_settings' ) );
     add_action( 'admin_menu', array( __CLASS__, 'register_settings_page' ) );
 
-    // Option-level changes affect every user's snapshot.
-    add_action( 'update_option_' . GHCA_Employee_Compliance_Dashboard::OPTION_DUE_DATE, array( 'GHCA_ECD_Data_Provider', 'bust_all_caches' ) );
-    add_action( 'update_option_' . GHCA_Employee_Compliance_Dashboard::OPTION_CACHE_TTL, array( 'GHCA_ECD_Data_Provider', 'bust_all_caches' ) );
-    add_action( 'update_option_' . GHCA_Employee_Compliance_Dashboard::OPTION_START_GROUPS, array( 'GHCA_ECD_Data_Provider', 'bust_all_caches' ) );
-
+    // Option-level changes affect every user's snapshot. Both hooks are
+    // needed: WordPress fires add_option_{name} (not update_option_{name})
+    // the first time a not-yet-persisted option is saved.
+    $bust_options = array(
+      GHCA_Employee_Compliance_Dashboard::OPTION_DUE_DATE,
+      GHCA_Employee_Compliance_Dashboard::OPTION_CACHE_TTL,
+      GHCA_Employee_Compliance_Dashboard::OPTION_START_GROUPS,
+    );
     if ( class_exists( 'GHCA_Course_Lifespans' ) ) {
-      add_action( 'update_option_' . GHCA_Course_Lifespans::OPTION_LIFESPANS, array( 'GHCA_ECD_Data_Provider', 'bust_all_caches' ) );
-      add_action( 'update_option_' . GHCA_Course_Lifespans::OPTION_WARNING_DAYS, array( 'GHCA_ECD_Data_Provider', 'bust_all_caches' ) );
+      $bust_options[] = GHCA_Course_Lifespans::OPTION_LIFESPANS;
+      $bust_options[] = GHCA_Course_Lifespans::OPTION_WARNING_DAYS;
     }
     if ( class_exists( 'GHCA_Compliance_Program' ) ) {
-      add_action( 'update_option_' . GHCA_Compliance_Program::OPTION_NEW_HIRE_GROUPS, array( 'GHCA_ECD_Data_Provider', 'bust_all_caches' ) );
-      add_action( 'update_option_' . GHCA_Compliance_Program::OPTION_NEW_HIRE_DAYS, array( 'GHCA_ECD_Data_Provider', 'bust_all_caches' ) );
+      $bust_options[] = GHCA_Compliance_Program::OPTION_NEW_HIRE_GROUPS;
+      $bust_options[] = GHCA_Compliance_Program::OPTION_NEW_HIRE_DAYS;
+    }
+    foreach ( $bust_options as $option_name ) {
+      add_action( 'update_option_' . $option_name, array( 'GHCA_ECD_Data_Provider', 'bust_all_caches' ) );
+      add_action( 'add_option_' . $option_name, array( 'GHCA_ECD_Data_Provider', 'bust_all_caches' ) );
     }
   }
 

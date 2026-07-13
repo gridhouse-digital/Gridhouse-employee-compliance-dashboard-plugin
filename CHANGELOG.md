@@ -2,6 +2,37 @@
 
 All notable changes to the Gridhouse Employee Compliance Dashboard are documented here.
 
+## [1.4.4]
+
+### Fixed (architecture-review findings)
+
+- **Cached page loads are query-free again.** The packet button's
+  `has_certificates()` check re-ran the LearnDash course loop on every render —
+  after v1.4.3 moved the button into the status cards (which are on the live
+  dashboard page), this partially undid the v1.2.0 caching win. The snapshot
+  now stores `packet_certificate_count` and the button reads it.
+- **First-ever save of a setting now busts caches.** WordPress fires
+  `add_option_{name}` (not `update_option_{name}`) the first time a
+  not-yet-persisted option is saved, so the bust hooks never fired on first
+  save. Both hooks are now registered per option — here and in the admin
+  plugin, which had the identical latent bug.
+- **Cancelling a packet build no longer locks the user out.** The
+  one-job-per-user lock used to reject new builds for up to 5 minutes after a
+  cancelled modal. `ajax_init` now deletes the abandoned job (which also
+  terminates any still-running fetch loop) and starts fresh.
+- **Elementor pages containing only `[employee_certificate_packet]`** are now
+  detected by the asset-enqueue gate (the substring check matched
+  `employee_compliance` only).
+
+### Housekeeping
+
+- Removed dead `resolve_due_date()` (unused since the v1.1 cycle logic).
+- Added `uninstall.php` (removes plugin-owned options, snapshot caches, and
+  packet locks; leaves the shared due-date option and announcement posts).
+- Added `.gitattributes` pinning CRLF (golden-output tests depend on stable
+  line endings inside ob_start template blocks).
+- `load_plugin_textdomain()` is now called so translations can actually load.
+
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
