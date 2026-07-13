@@ -77,13 +77,16 @@ complete/in-progress/not-started status.
 ## Traffic light (LearnDash course table)
 
 A colored dot is injected next to each course title in the LearnDash profile
-table (`[ld_profile]`) via the `learndash-course-row-class` filter. The filter
-appends a `ghca-traffic-light--{state}` class to the course row; CSS draws the
-dot on `.ld-course-title::before`:
+table via the `learndash-course-row-class` filter. The filter appends a
+`ghca-traffic-light--{state}` class to the course row; the self-contained
+`assets/traffic-light.css` (enqueued on any page using the `[ld_profile]`
+shortcode, the `learndash/ld-profile` block, or an Elementor layout containing
+`ld_profile`) draws the dot on `.ld-course-title::before`:
 
 - 🟢 green — `current` / `completed` / `compliant`
-- 🟡 amber — `expiring_soon`
+- 🟡 amber — `expiring_soon` (follows the branding accent color when set)
 - 🔴 red — `expired` / `new_hire_overdue`
+- ⚪ neutral grey — `incomplete` (not started / in progress)
 
 ## Integrations
 

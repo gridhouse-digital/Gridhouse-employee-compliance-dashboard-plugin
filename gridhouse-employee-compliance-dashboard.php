@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Gridhouse Employee Compliance Dashboard
  * Description: Employee compliance home dashboard shortcodes for LearnDash + Elementor.
- * Version: 1.4.0
+ * Version: 1.4.2
  * Author: Gridhouse Digital
  * Author URI: https://gridhouse.digital
  * Text Domain: ghca-ecd
@@ -30,7 +30,7 @@ final class GHCA_Employee_Compliance_Dashboard {
   const OPTION_DUE_DATE     = 'ghca_compliance_due_date';
   const OPTION_CACHE_TTL    = 'ghca_ecd_cache_ttl';
   const OPTION_START_GROUPS = 'ghca_ecd_start_group_ids';
-  const VERSION             = '1.4.0';
+  const VERSION             = '1.4.2';
   const CYCLE_DAYS       = 365;
   const NOTICE_DAYS      = 90;
 
@@ -86,6 +86,18 @@ final class GHCA_Employee_Compliance_Dashboard {
     $post = get_post();
     if ( ! $post ) {
       return;
+    }
+
+    // The traffic-light dots live on LearnDash profile pages, which are not
+    // dashboard pages — they get a small self-contained stylesheet instead
+    // (deliberately without the ghca-ecd-page body class or its width overrides).
+    if ( self::page_uses_traffic_light( $post ) ) {
+      wp_enqueue_style(
+        'ghca-employee-traffic-light',
+        plugin_dir_url( __FILE__ ) . 'assets/traffic-light.css',
+        array(),
+        self::VERSION
+      );
     }
 
     if ( ! self::page_uses_dashboard( $post ) ) {
@@ -148,6 +160,15 @@ final class GHCA_Employee_Compliance_Dashboard {
     }
 
     return $classes;
+  }
+
+  private static function page_uses_traffic_light( WP_Post $post ): bool {
+    if ( has_shortcode( $post->post_content, 'ld_profile' ) || has_block( 'learndash/ld-profile', $post ) ) {
+      return true;
+    }
+
+    $elementor_data = get_post_meta( $post->ID, '_elementor_data', true );
+    return is_string( $elementor_data ) && strpos( $elementor_data, 'ld_profile' ) !== false;
   }
 
   public static function page_uses_dashboard( WP_Post $post ): bool {

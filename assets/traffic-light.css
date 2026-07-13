@@ -1,0 +1,52 @@
+/* =====================================================================
+ * Traffic Light System (LearnDash profile course rows)
+ *
+ * Loaded on any page rendering the LearnDash profile (shortcode
+ * [ld_profile], the learndash/ld-profile block, or Elementor widget) —
+ * these pages do NOT load dashboard.css, so this file is self-contained.
+ * Tokens are defined on .ghca-traffic-light itself because the profile
+ * markup is not inside a .ghca-ecd wrapper; values mirror the token
+ * block in dashboard.css. --ent-highlight stays brand-aware: when the
+ * row does sit inside a branded dashboard context the branding var
+ * wins, otherwise the design default applies.
+ * ===================================================================== */
+
+.ghca-traffic-light {
+  --ent-success: #2f9e63;
+  --ent-highlight: var(--ghca-accent, #f3ab12);
+  --ent-danger: #c8472c;
+  --ent-faint: #9aa3ac;
+  position: relative;
+}
+
+.ghca-traffic-light .ld-course-title {
+  display: inline-flex;
+  align-items: center;
+}
+
+.ghca-traffic-light .ld-course-title::before {
+  content: "";
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 10px;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5) inset;
+  background-color: var(--ent-faint); /* neutral until a state class colors it */
+}
+
+.ghca-traffic-light--current .ld-course-title::before,
+.ghca-traffic-light--completed .ld-course-title::before,
+.ghca-traffic-light--compliant .ld-course-title::before {
+  background-color: var(--ent-success);
+}
+
+.ghca-traffic-light--expiring_soon .ld-course-title::before {
+  background-color: var(--ent-highlight);
+}
+
+.ghca-traffic-light--expired .ld-course-title::before,
+.ghca-traffic-light--new_hire_overdue .ld-course-title::before {
+  background-color: var(--ent-danger);
+}

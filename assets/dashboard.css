@@ -1,32 +1,73 @@
 .ghca-ecd {
+  /* ---- Brand (fed by GHCA_Dashboard_Branding inline CSS — these six
+     --ghca-* names are that contract and must stay raw values here;
+     the inline <style> is printed after this sheet and overrides them) ---- */
   --ghca-primary: #176cad;
   --ghca-primary-dark: #0f4f7d;
   --ghca-primary-soft: #e8f1f9;
   --ghca-secondary: #59cd90;
   --ghca-accent: #f3ab12;
-  --ghca-accent-deep: #d68f0a;
-  --ghca-warning: #b07908;
-  --ghca-danger: #c8472c;
-  --ghca-success: #2f9e63;
-  --ghca-ink: #0f2235;
-  --ghca-ink-soft: #1c3a52;
-  --ghca-muted: #6b7682;
-  --ghca-faint: #9aa3ac;
-  --ghca-border: #eaedf1;
-  --ghca-border-strong: #dbe5ee;
-  --ghca-bg: #f7f9fb;
-  --ghca-white: #ffffff;
-  --ghca-ecd-gap: 18px;
-  --ghca-ecd-section-gap: 30px;
-  --ghca-radius: 16px;
-  --ghca-radius-lg: 20px;
-  --ghca-shadow-sm: 0 2px 14px rgba(15, 34, 53, 0.04);
-  --ghca-shadow-md: 0 2px 16px rgba(15, 34, 53, 0.06);
-  --ghca-shadow-lg: 0 14px 40px rgba(23, 108, 173, 0.18);
   --ghca-ring: 0 0 0 4px rgba(23, 108, 173, 0.16);
-  --ghca-font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-family: var(--ghca-font-sans);
-  color: var(--ghca-ink);
+
+  --ent-brand: var(--ghca-primary, #176cad);
+  --ent-brand-strong: var(--ghca-primary-dark, #0f4f7d);
+  --ent-brand-soft: var(--ghca-primary-soft, #e8f1f9);
+  --ent-accent: var(--ghca-secondary, #59cd90);
+  --ent-highlight: var(--ghca-accent, #f3ab12);
+  --ent-ring: var(--ghca-ring, 0 0 0 4px rgba(23, 108, 173, 0.16));
+
+  /* ---- Status & text (employee palette — values unchanged) ---- */
+  --ent-highlight-deep: #d68f0a;
+  --ent-warning: #b07908;
+  --ent-danger: #c8472c;
+  --ent-success: #2f9e63;
+  --ent-heading: #0f2235;
+  --ent-text: #1c3a52;
+  --ent-muted: #6b7682;
+  --ent-faint: #9aa3ac;
+
+  /* ---- Surfaces / layout / motion ---- */
+  --ent-border: #eaedf1;
+  --ent-border-strong: #dbe5ee;
+  --ent-surface: #ffffff;
+  --ent-surface-2: #f7f9fb;
+  --ent-gap: 18px;
+  --ent-section-gap: 30px;
+  --ent-radius: 16px;
+  --ent-radius-lg: 20px;
+  --ent-shadow-sm: 0 2px 14px rgba(15, 34, 53, 0.04);
+  --ent-shadow-md: 0 2px 16px rgba(15, 34, 53, 0.06);
+  --ent-shadow-lg: 0 14px 40px rgba(23, 108, 173, 0.18);
+
+  /* ---- Typography ---- */
+  --ent-font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* ---- Back-compat aliases: PHP inline styles and the traffic-light
+     rules reference the old names — keep them defined forever. The six
+     branding names above are deliberately NOT aliased (circular var()). ---- */
+  --ghca-accent-deep: var(--ent-highlight-deep);
+  --ghca-warning: var(--ent-warning);
+  --ghca-danger: var(--ent-danger);
+  --ghca-success: var(--ent-success);
+  --ghca-ink: var(--ent-heading);
+  --ghca-ink-soft: var(--ent-text);
+  --ghca-muted: var(--ent-muted);
+  --ghca-faint: var(--ent-faint);
+  --ghca-border: var(--ent-border);
+  --ghca-border-strong: var(--ent-border-strong);
+  --ghca-bg: var(--ent-surface-2);
+  --ghca-white: var(--ent-surface);
+  --ghca-ecd-gap: var(--ent-gap);
+  --ghca-ecd-section-gap: var(--ent-section-gap);
+  --ghca-radius: var(--ent-radius);
+  --ghca-radius-lg: var(--ent-radius-lg);
+  --ghca-shadow-sm: var(--ent-shadow-sm);
+  --ghca-shadow-md: var(--ent-shadow-md);
+  --ghca-shadow-lg: var(--ent-shadow-lg);
+  --ghca-font-sans: var(--ent-font-sans);
+
+  font-family: var(--ent-font-sans);
+  color: var(--ent-heading);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -77,7 +118,7 @@
 .ghca-ecd--trio,
 .ghca-ecd--links {
   display: block;
-  margin-bottom: var(--ghca-ecd-section-gap);
+  margin-bottom: var(--ent-section-gap);
 }
 
 /* ============ Icon tiles (shared) ============ */
@@ -111,7 +152,7 @@
   width: 62px;
   height: 62px;
   border-radius: 16px;
-  background: var(--ghca-white) !important;
+  background: var(--ent-surface) !important;
   border: 1px solid #dceaf5;
   box-shadow: 0 4px 14px rgba(23, 108, 173, 0.1);
 }
@@ -121,15 +162,15 @@
   height: 30px;
 }
 
-.ghca-ecd__tile--blue { background: #e8f1f9; color: var(--ghca-primary); }
-.ghca-ecd__tile--green { background: #e9f6ef; color: var(--ghca-success); }
-.ghca-ecd__tile--amber { background: #fdefce; color: var(--ghca-accent-deep); }
+.ghca-ecd__tile--blue { background: #e8f1f9; color: var(--ent-brand); }
+.ghca-ecd__tile--green { background: #e9f6ef; color: var(--ent-success); }
+.ghca-ecd__tile--amber { background: #fdefce; color: var(--ent-highlight-deep); }
 .ghca-ecd__tile--purple { background: #f3eefb; color: #7c5fc0; }
 .ghca-ecd__tile--neutral { background: #eef1f4; color: #5b6776; }
-.ghca-ecd__tile--warning { background: #fdefce; color: var(--ghca-accent-deep); }
-.ghca-ecd__tile--danger { background: #fdeae6; color: var(--ghca-danger); }
-.ghca-ecd__tile--success { background: #dcf3e5; color: var(--ghca-success); }
-.ghca-ecd__tile--info { background: #dcebf7; color: var(--ghca-primary); }
+.ghca-ecd__tile--warning { background: #fdefce; color: var(--ent-highlight-deep); }
+.ghca-ecd__tile--danger { background: #fdeae6; color: var(--ent-danger); }
+.ghca-ecd__tile--success { background: #dcf3e5; color: var(--ent-success); }
+.ghca-ecd__tile--info { background: #dcebf7; color: var(--ent-brand); }
 
 /* ============ Buttons ============ */
 .ghca-ecd__btn {
@@ -151,7 +192,7 @@
 
 .ghca-ecd__btn:hover { transform: translateY(-2px); color: inherit !important; }
 .ghca-ecd__btn:active { transform: translateY(0); }
-.ghca-ecd__btn:focus-visible { outline: none; box-shadow: var(--ghca-ring); }
+.ghca-ecd__btn:focus-visible { outline: none; box-shadow: var(--ent-ring); }
 
 .ghca-ecd__btn-icon {
   width: 16px;
@@ -159,21 +200,21 @@
 }
 
 .ghca-ecd__btn--primary {
-  background: linear-gradient(180deg, #1f82c9 0%, var(--ghca-primary) 100%);
-  color: var(--ghca-white);
+  background: linear-gradient(180deg, #1f82c9 0%, var(--ent-brand) 100%);
+  color: var(--ent-surface);
   box-shadow: 0 6px 16px rgba(23, 108, 173, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
 
 .ghca-ecd__btn--ghost {
-  background: var(--ghca-white);
+  background: var(--ent-surface);
   color: #46505b;
-  border-color: var(--ghca-border-strong);
-  box-shadow: var(--ghca-shadow-sm);
+  border-color: var(--ent-border-strong);
+  box-shadow: var(--ent-shadow-sm);
   padding: 9px 16px;
   font-size: 0.85rem;
 }
 
-.ghca-ecd__btn--ghost:hover { border-color: var(--ghca-primary); color: var(--ghca-primary) !important; }
+.ghca-ecd__btn--ghost:hover { border-color: var(--ent-brand); color: var(--ent-brand) !important; }
 
 .ghca-ecd__btn--hero {
   width: 100%;
@@ -189,13 +230,13 @@
 .ghca-ecd__btn--hero:hover { box-shadow: 0 12px 26px rgba(243, 171, 18, 0.5); color: #3a2700 !important; }
 
 .ghca-ecd__btn--secondary {
-  background: linear-gradient(180deg, #1f82c9 0%, var(--ghca-primary) 100%);
-  color: var(--ghca-white);
+  background: linear-gradient(180deg, #1f82c9 0%, var(--ent-brand) 100%);
+  color: var(--ent-surface);
   box-shadow: 0 6px 16px rgba(23, 108, 173, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
 
 .ghca-ecd__btn--secondary:hover {
-  color: var(--ghca-white) !important;
+  color: var(--ent-surface) !important;
 }
 
 .ghca-ecd__btn--compact {
@@ -206,8 +247,8 @@
 }
 
 .ghca-ecd__btn--support {
-  background: var(--ghca-primary);
-  color: var(--ghca-white);
+  background: var(--ent-brand);
+  color: var(--ent-surface);
   padding: 14px 24px;
   font-size: 0.95rem;
   box-shadow: 0 8px 20px rgba(23, 108, 173, 0.28);
@@ -223,7 +264,7 @@
   border-radius: 999px;
   background: #e9f6ef;
   border: 1px solid #c4ecd5;
-  color: var(--ghca-success);
+  color: var(--ent-success);
   font-weight: 700;
   font-size: 0.85rem;
 }
@@ -233,16 +274,16 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--ghca-secondary);
+  background: var(--ent-accent);
   box-shadow: 0 0 0 4px rgba(89, 205, 144, 0.25);
 }
 
 /* ============ Generic card (login gate) ============ */
 .ghca-ecd__card {
-  background: var(--ghca-white);
-  border: 1px solid var(--ghca-border);
-  border-radius: var(--ghca-radius-lg);
-  box-shadow: var(--ghca-shadow-md);
+  background: var(--ent-surface);
+  border: 1px solid var(--ent-border);
+  border-radius: var(--ent-radius-lg);
+  box-shadow: var(--ent-shadow-md);
   padding: 28px 30px;
 }
 
@@ -251,7 +292,7 @@
   margin: 56px auto;
   padding: 44px;
   text-align: center;
-  box-shadow: var(--ghca-shadow-lg);
+  box-shadow: var(--ent-shadow-lg);
 }
 
 .ghca-ecd__card--center h2 {
@@ -261,7 +302,7 @@
 
 .ghca-ecd__card--center p {
   margin: 0 0 22px;
-  color: var(--ghca-muted);
+  color: var(--ent-muted);
 }
 
 /* ============ Welcome ============ */
@@ -284,7 +325,7 @@
   height: 112px;
   border-radius: 18px;
   background: #f2f3f5;
-  border: 1px solid var(--ghca-border);
+  border: 1px solid var(--ent-border);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -311,13 +352,13 @@
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.1;
-  color: var(--ghca-ink);
+  color: var(--ent-heading);
 }
 
 .ghca-ecd__welcome-subtitle {
   margin: 6px 0 0;
   font-size: 1.05rem;
-  color: var(--ghca-muted);
+  color: var(--ent-muted);
 }
 
 .ghca-ecd__welcome-aside {
@@ -341,7 +382,7 @@
   width: 74px;
   height: 74px;
   border-radius: 50%;
-  background: var(--ghca-white);
+  background: var(--ent-surface);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -351,7 +392,7 @@
 .ghca-ecd__ring-value {
   font-size: 1.3rem;
   font-weight: 800;
-  color: var(--ghca-ink);
+  color: var(--ent-heading);
   line-height: 1;
 }
 
@@ -362,7 +403,7 @@
 
 .ghca-ecd__ring-label {
   font-size: 0.62rem;
-  color: var(--ghca-faint);
+  color: var(--ent-faint);
   margin-top: 2px;
 }
 
@@ -374,9 +415,9 @@
   justify-content: space-between;
   gap: 18px;
   padding: 18px 22px;
-  border-radius: var(--ghca-radius);
+  border-radius: var(--ent-radius);
   border: 1px solid transparent;
-  box-shadow: var(--ghca-shadow-sm);
+  box-shadow: var(--ent-shadow-sm);
 }
 
 .ghca-ecd__notice-label {
@@ -416,7 +457,7 @@
 .ghca-ecd__kpi-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: var(--ghca-ecd-gap);
+  gap: var(--ent-gap);
 }
 
 .ghca-ecd__kpi {
@@ -424,10 +465,10 @@
   flex-direction: column;
   gap: 15px;
   padding: 22px;
-  background: var(--ghca-white);
-  border: 1px solid var(--ghca-border);
-  border-radius: var(--ghca-radius);
-  box-shadow: var(--ghca-shadow-sm);
+  background: var(--ent-surface);
+  border: 1px solid var(--ent-border);
+  border-radius: var(--ent-radius);
+  box-shadow: var(--ent-shadow-sm);
 }
 
 .ghca-ecd__kpi--due {
@@ -481,7 +522,7 @@
   font-size: 1.4rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: var(--ghca-ink);
+  color: var(--ent-heading);
   line-height: 1.2;
   font-variant-numeric: tabular-nums;
 }
@@ -492,11 +533,11 @@
 
 .ghca-ecd__kpi-value--muted {
   font-size: 1.05rem;
-  color: var(--ghca-faint);
+  color: var(--ent-faint);
 }
 
 .ghca-ecd__kpi-value--warning {
-  color: var(--ghca-accent-deep);
+  color: var(--ent-highlight-deep);
 }
 
 .ghca-ecd__kpi-unit {
@@ -516,14 +557,14 @@
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--ghca-secondary);
+  background: var(--ent-accent);
   transition: width 0.35s ease;
 }
 
 .ghca-ecd__kpi-foot {
   margin: 0;
   font-size: 0.75rem;
-  color: var(--ghca-faint);
+  color: var(--ent-faint);
   line-height: 1.45;
 }
 
@@ -556,9 +597,9 @@
 
 .ghca-ecd__pill--neutral { color: #5b6776; background: #f1f5f9; border-color: #e2e8f0; }
 .ghca-ecd__pill--info { color: #1d4ed8; background: #eff6ff; border-color: #bfdbfe; }
-.ghca-ecd__pill--success { color: var(--ghca-success); background: #ecfdf5; border-color: #a7f3d0; }
-.ghca-ecd__pill--warning { color: var(--ghca-accent-deep); background: #fdefce; border-color: #f7dca0; }
-.ghca-ecd__pill--danger { color: var(--ghca-danger); background: #fef2f2; border-color: #fcdcdc; }
+.ghca-ecd__pill--success { color: var(--ent-success); background: #ecfdf5; border-color: #a7f3d0; }
+.ghca-ecd__pill--warning { color: var(--ent-highlight-deep); background: #fdefce; border-color: #f7dca0; }
+.ghca-ecd__pill--danger { color: var(--ent-danger); background: #fef2f2; border-color: #fcdcdc; }
 
 .ghca-ecd__pill--locked {
   color: #7b8794;
@@ -595,10 +636,10 @@
   display: flex;
   flex-direction: column;
   padding: 32px;
-  border-radius: var(--ghca-radius-lg);
-  color: var(--ghca-white);
-  background: linear-gradient(160deg, #0f4f7d 0%, var(--ghca-primary) 60%, #1c7bc4 100%);
-  box-shadow: var(--ghca-shadow-lg);
+  border-radius: var(--ent-radius-lg);
+  color: var(--ent-surface);
+  background: linear-gradient(160deg, #0f4f7d 0%, var(--ent-brand) 60%, #1c7bc4 100%);
+  box-shadow: var(--ent-shadow-lg);
   overflow: hidden;
 }
 
@@ -625,7 +666,7 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  background: var(--ghca-accent);
+  background: var(--ent-highlight);
   color: #3a2700;
   font-size: 0.7rem;
   font-weight: 800;
@@ -670,7 +711,7 @@
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.15;
-  color: var(--ghca-white);
+  color: var(--ent-surface);
 }
 
 .ghca-ecd__hero-desc {
@@ -709,7 +750,7 @@
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--ghca-secondary);
+  background: var(--ent-accent);
   transition: width 0.35s ease;
 }
 
@@ -718,10 +759,10 @@
   display: flex;
   flex-direction: column;
   padding: 30px;
-  background: var(--ghca-white);
-  border: 1px solid var(--ghca-border);
-  border-radius: var(--ghca-radius-lg);
-  box-shadow: var(--ghca-shadow-md);
+  background: var(--ent-surface);
+  border: 1px solid var(--ent-border);
+  border-radius: var(--ent-radius-lg);
+  box-shadow: var(--ent-shadow-md);
 }
 
 .ghca-ecd__panel--featured {
@@ -752,14 +793,14 @@
 .ghca-ecd__panel-sub {
   margin: 0 0 20px;
   font-size: 0.82rem;
-  color: var(--ghca-faint);
+  color: var(--ent-faint);
 }
 
 .ghca-ecd__count-pill {
   font-size: 0.72rem;
   font-weight: 700;
-  color: var(--ghca-primary);
-  background: var(--ghca-primary-soft);
+  color: var(--ent-brand);
+  background: var(--ent-brand-soft);
   padding: 5px 11px;
   border-radius: 999px;
   white-space: nowrap;
@@ -782,7 +823,7 @@
   padding: 14px 16px;
   border-radius: 12px;
   background: #fbfcfd;
-  border: 1px solid var(--ghca-border);
+  border: 1px solid var(--ent-border);
   font-size: 0.9rem;
   font-weight: 600;
   color: #36414c;
@@ -807,8 +848,8 @@
 }
 
 .ghca-ecd__checklist-item.is-done .ghca-ecd__checkmark {
-  background: var(--ghca-secondary);
-  border-color: var(--ghca-secondary);
+  background: var(--ent-accent);
+  border-color: var(--ent-accent);
 }
 
 .ghca-ecd__checklist-item.is-done .ghca-ecd__checkmark::after {
@@ -835,7 +876,7 @@
   gap: 13px;
   padding: 15px;
   border-radius: 13px;
-  border: 1px solid var(--ghca-border);
+  border: 1px solid var(--ent-border);
   background: #f7f9fb;
 }
 
@@ -906,13 +947,13 @@
 
 .ghca-ecd__links-caption {
   font-size: 0.82rem;
-  color: var(--ghca-faint);
+  color: var(--ent-faint);
 }
 
 .ghca-ecd__ql-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: var(--ghca-ecd-gap);
+  gap: var(--ent-gap);
 }
 
 .ghca-ecd__ql-card {
@@ -920,18 +961,18 @@
   flex-direction: column;
   gap: 14px;
   padding: 22px;
-  border-radius: var(--ghca-radius);
-  background: var(--ghca-white);
-  border: 1px solid var(--ghca-border);
+  border-radius: var(--ent-radius);
+  background: var(--ent-surface);
+  border: 1px solid var(--ent-border);
   text-decoration: none;
-  color: var(--ghca-ink-soft);
-  box-shadow: var(--ghca-shadow-sm);
+  color: var(--ent-text);
+  box-shadow: var(--ent-shadow-sm);
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
 .ghca-ecd__ql-card:hover {
   transform: translateY(-3px);
-  border-color: var(--ghca-primary);
+  border-color: var(--ent-brand);
   box-shadow: 0 10px 26px rgba(23, 108, 173, 0.14);
 }
 
@@ -944,12 +985,12 @@
 .ghca-ecd__ql-title {
   font-size: 0.97rem;
   font-weight: 700;
-  color: var(--ghca-ink-soft);
+  color: var(--ent-text);
 }
 
 .ghca-ecd__ql-sub {
   font-size: 0.78rem;
-  color: var(--ghca-faint);
+  color: var(--ent-faint);
 }
 
 /* ============ Support ============ */
@@ -964,7 +1005,7 @@
   gap: 28px;
   flex-wrap: wrap;
   padding: 30px 36px;
-  border-radius: var(--ghca-radius-lg);
+  border-radius: var(--ent-radius-lg);
   background: linear-gradient(120deg, #eef5fb 0%, #f4f9fd 100%);
   border: 1px solid #dceaf5;
 }
@@ -990,7 +1031,7 @@
 }
 
 .ghca-ecd__support-sub a {
-  color: var(--ghca-primary);
+  color: var(--ent-brand);
   font-weight: 700;
   text-decoration: none;
 }
@@ -1059,41 +1100,8 @@
   }
 }
 
-/* ============ Traffic Light System (LearnDash Profile) ============ */
-.ghca-traffic-light {
-  position: relative;
-}
-
-.ghca-traffic-light .ld-course-title {
-  display: inline-flex;
-  align-items: center;
-}
-
-.ghca-traffic-light .ld-course-title::before {
-  content: "";
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  margin-right: 10px;
-  flex-shrink: 0;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5) inset;
-}
-
-.ghca-traffic-light--current .ld-course-title::before,
-.ghca-traffic-light--completed .ld-course-title::before,
-.ghca-traffic-light--compliant .ld-course-title::before {
-  background-color: var(--ghca-success);
-}
-
-.ghca-traffic-light--expiring_soon .ld-course-title::before {
-  background-color: var(--ghca-accent);
-}
-
-.ghca-traffic-light--expired .ld-course-title::before,
-.ghca-traffic-light--new_hire_overdue .ld-course-title::before {
-  background-color: var(--ghca-danger);
-}
+/* Traffic Light System: moved to assets/traffic-light.css (self-contained,
+   enqueued on LearnDash profile pages, which do not load this sheet). */
 
 
 
@@ -1120,9 +1128,9 @@
 .ghca-ecd__pdf-modal-dialog {
   position: relative;
   width: min(440px, calc(100vw - 32px));
-  background: var(--ghca-white);
-  border-radius: var(--ghca-radius);
-  box-shadow: var(--ghca-shadow-lg);
+  background: var(--ent-surface);
+  border-radius: var(--ent-radius);
+  box-shadow: var(--ent-shadow-lg);
   padding: 28px;
 }
 
@@ -1130,19 +1138,19 @@
   margin: 0 0 6px;
   font-size: 20px;
   font-weight: 700;
-  color: var(--ghca-ink);
+  color: var(--ent-heading);
 }
 
 .ghca-ecd__pdf-modal-status {
   margin: 0 0 16px;
   font-size: 14px;
-  color: var(--ghca-muted);
+  color: var(--ent-muted);
 }
 
 .ghca-ecd__pdf-progress {
   height: 10px;
   border-radius: 999px;
-  background: var(--ghca-border);
+  background: var(--ent-border);
   overflow: hidden;
 }
 
@@ -1150,12 +1158,12 @@
   height: 100%;
   width: 0%;
   border-radius: 999px;
-  background: var(--ghca-primary);
+  background: var(--ent-brand);
   transition: width 0.25s ease;
 }
 
 .ghca-ecd__pdf-progress-fill.is-error {
-  background: var(--ghca-danger);
+  background: var(--ent-danger);
 }
 
 .ghca-ecd__pdf-modal-footer {

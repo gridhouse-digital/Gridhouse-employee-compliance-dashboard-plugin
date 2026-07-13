@@ -5,6 +5,54 @@ All notable changes to the Gridhouse Employee Compliance Dashboard are documente
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.2]
+
+### Fixed — traffic-light dots never rendered on LearnDash profile pages
+
+- Two stacked bugs, present since the feature shipped in v1.1.0:
+  1. The Profile page uses the `learndash/ld-profile` **block** (not a
+     dashboard shortcode), so `page_uses_dashboard()` was false and
+     `dashboard.css` — including all traffic-light rules — was never enqueued
+     there at all.
+  2. Even where the stylesheet did load, the dot colors referenced custom
+     properties defined only on the `.ghca-ecd` scope, and LearnDash profile
+     markup is not inside that wrapper — the `var()` lookups resolved to
+     nothing and the dots rendered transparent.
+- Fix: traffic-light rules moved to a new self-contained
+  `assets/traffic-light.css` that defines its tokens on `.ghca-traffic-light`
+  itself (values mirror the dashboard palette; the amber stays brand-aware via
+  `var(--ghca-accent, #f3ab12)`). It is enqueued on any page using the
+  `[ld_profile]` shortcode, the `learndash/ld-profile` block, or an Elementor
+  layout containing `ld_profile` — deliberately without the `ghca-ecd-page`
+  body class, so the dashboard's page-width overrides do not leak onto
+  profile pages.
+- The previously unstyled `incomplete` state now gets a neutral grey dot
+  (`#9aa3ac`) — with the dot base style finally loading, an uncolored ring
+  would have looked broken.
+- Verified on the live site: Profile page (ID 32) enqueues only
+  traffic-light.css; the Elementor dashboard page (ID 2264) enqueues only
+  dashboard.css; all four dot states compute to the exact palette colors
+  outside any `.ghca-ecd` wrapper.
+
+## [1.4.1]
+
+### Changed — design-token adoption (zero visual change)
+
+- `assets/dashboard.css` now uses the admin plugin's `--ent-*` design-token
+  system. Brand tokens read the branding contract vars with fallbacks
+  (`--ent-brand: var(--ghca-primary, #176cad)` …); status/surface/layout
+  tokens carry the employee palette's existing values unchanged.
+- The six branding-contract names (`--ghca-primary`, `--ghca-primary-dark`,
+  `--ghca-primary-soft`, `--ghca-secondary`, `--ghca-accent`, `--ghca-ring`)
+  stay raw values — `GHCA_Dashboard_Branding`'s inline CSS overrides them at
+  runtime; aliasing them would create circular `var()` references.
+- All other old `--ghca-*` names remain defined as aliases of their `--ent-*`
+  equivalents (PHP inline styles and the traffic-light rules reference them).
+- Verified: computed styles of all 583 rendered dashboard elements × 29 CSS
+  properties are identical before/after, both with the live branding inline
+  CSS applied and with it absent; branding recolor confirmed to flow through
+  the new tokens (button gradient + progress ring).
+
 ## [1.4.0]
 
 ### Added — Self-service certificate packet
