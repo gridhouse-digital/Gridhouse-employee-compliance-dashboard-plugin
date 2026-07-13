@@ -185,8 +185,20 @@ final class GHCA_ECD_Data_Provider {
         $user_id
       ) );
 
+    // Certificates eligible for the self-service packet (always measured
+    // against the full enrolled list, not the new-hire subset). Stored in
+    // the snapshot so cached page loads can show/hide the packet button
+    // without re-running the LearnDash course loop.
+    $packet_certs = 0;
+    foreach ( self::get_required_courses( $user_id ) as $packet_course ) {
+      if ( ! empty( $packet_course['completed'] ) && '' !== self::get_certificate_url( $user_id, (int) $packet_course['id'] ) ) {
+        ++$packet_certs;
+      }
+    }
+
     self::$snapshot = array(
       'user_id'                   => $user_id,
+      'packet_certificate_count'  => $packet_certs,
       'first_name'                => get_user_meta( $user_id, 'first_name', true ),
       'display_name'              => $user ? $user->display_name : '',
       'courses'                   => $courses,

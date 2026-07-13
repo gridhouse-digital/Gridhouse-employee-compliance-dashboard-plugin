@@ -1172,10 +1172,57 @@
   justify-content: flex-end;
 }
 
-.ghca-ecd__btn--packet {
+/* Certificate KPI card: both buttons share one row so the card keeps its height. */
+.ghca-ecd__kpi-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.ghca-ecd__kpi-actions .ghca-ecd__btn--compact {
+  align-self: auto;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+/* Hardened against theme button:hover styles (BuddyBoss overrode the ghost
+   background on hover, leaving brand-blue text on a dark background). */
+.ghca-ecd__btn.ghca-ecd__btn--packet {
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--ent-surface) !important;
+  color: #46505b !important;
+  border: 1px solid var(--ent-border-strong) !important;
+}
+
+.ghca-ecd__btn.ghca-ecd__btn--packet:hover,
+.ghca-ecd__btn.ghca-ecd__btn--packet:focus {
+  background: var(--ent-surface) !important;
+  color: var(--ent-brand) !important;
+  border-color: var(--ent-brand) !important;
+}
+
+.ghca-ecd--welcome .ghca-ecd__btn--packet {
   margin-top: 10px;
 }
 
 .ghca-ecd__panel--packet {
   max-width: 560px;
+}
+
+/* ============ Announcements: action link ============ */
+.ghca-ecd__announce-action {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ent-brand);
+  text-decoration: none;
+}
+
+.ghca-ecd__announce-action:hover {
+  color: var(--ent-brand-strong);
+  text-decoration: underline;
 }

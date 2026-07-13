@@ -257,11 +257,16 @@ final class GHCA_ECD_Shortcodes {
           </div>
           <div class="ghca-ecd__kpi-body">
             <span class="ghca-ecd__kpi-label"><?php esc_html_e( 'Certificate', 'ghca-ecd' ); ?></span>
-            <?php if ( ! empty( $data['certificate_url'] ) ) : ?>
-              <a class="ghca-ecd__btn ghca-ecd__btn--secondary ghca-ecd__btn--compact" href="<?php echo esc_url( $data['certificate_url'] ); ?>"><?php esc_html_e( 'View Certificate', 'ghca-ecd' ); ?></a>
-            <?php else : ?>
-              <span class="ghca-ecd__pill ghca-ecd__pill--locked"><?php echo GHCA_ECD_UI_Icons::render( 'compliance', 'ghca-ecd__pill-icon' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?><?php esc_html_e( 'Locked', 'ghca-ecd' ); ?></span>
-            <?php endif; ?>
+            <div class="ghca-ecd__kpi-actions">
+              <?php if ( ! empty( $data['certificate_url'] ) ) : ?>
+                <a class="ghca-ecd__btn ghca-ecd__btn--secondary ghca-ecd__btn--compact" href="<?php echo esc_url( $data['certificate_url'] ); ?>"><?php esc_html_e( 'Recent Cert', 'ghca-ecd' ); ?></a>
+              <?php else : ?>
+                <span class="ghca-ecd__pill ghca-ecd__pill--locked"><?php echo GHCA_ECD_UI_Icons::render( 'compliance', 'ghca-ecd__pill-icon' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?><?php esc_html_e( 'Locked', 'ghca-ecd' ); ?></span>
+              <?php endif; ?>
+              <?php if ( GHCA_ECD_Cert_Packet::is_available() && GHCA_ECD_Cert_Packet::has_certificates() ) : ?>
+                <button type="button" class="ghca-ecd__btn ghca-ecd__btn--ghost ghca-ecd__btn--compact ghca-ecd__btn--packet" data-ghca-ecd-packet><?php esc_html_e( 'Cert Packet', 'ghca-ecd' ); ?></button>
+              <?php endif; ?>
+            </div>
           </div>
           <p class="ghca-ecd__kpi-foot"><?php echo ! empty( $data['certificate_url'] ) ? esc_html__( 'Ready to download.', 'ghca-ecd' ) : esc_html__( 'Available after completion.', 'ghca-ecd' ); ?></p>
         </div>
@@ -458,6 +463,9 @@ final class GHCA_ECD_Shortcodes {
                   <?php if ( ! empty( $item['meta'] ) ) : ?>
                     <span class="ghca-ecd__announce-meta"><?php echo esc_html( $item['meta'] ); ?></span>
                   <?php endif; ?>
+                  <?php if ( ! empty( $item['url'] ) ) : ?>
+                    <a class="ghca-ecd__announce-action" href="<?php echo esc_url( $item['url'] ); ?>"><?php esc_html_e( 'Take action', 'ghca-ecd' ); ?> &rarr;</a>
+                  <?php endif; ?>
                 </div>
               </div>
             <?php endforeach; ?>
@@ -491,10 +499,20 @@ final class GHCA_ECD_Shortcodes {
       )
     );
 
+    // Map the admin plugin's announcement types (ghca_announce_type meta,
+    // written by its Add-note CRUD) onto this dashboard's tones/icons.
+    $type_map = array(
+      'alert'    => array( 'tone' => 'warning', 'icon' => 'alert' ),
+      'reminder' => array( 'tone' => 'info', 'icon' => 'bell' ),
+      'update'   => array( 'tone' => 'success', 'icon' => 'status' ),
+      'system'   => array( 'tone' => 'neutral', 'icon' => 'document' ),
+    );
+
     if ( ! empty( $posts ) ) {
       $items = array();
       foreach ( $posts as $index => $post ) {
-        $preset = $presets[ $index % count( $presets ) ];
+        $type   = (string) get_post_meta( $post->ID, 'ghca_announce_type', true );
+        $preset = $type_map[ $type ] ?? $presets[ $index % count( $presets ) ];
         $title  = trim( (string) get_the_title( $post ) );
         $body   = trim( wp_strip_all_tags( (string) $post->post_content ) );
 
@@ -514,8 +532,12 @@ final class GHCA_ECD_Shortcodes {
           'icon'  => $preset['icon'],
         );
 
-        if ( $body !== '' ) {
-          $item['url'] = get_permalink( $post );
+        // The action link the admin attached in the announcements manager.
+        // (Never get_permalink(): the ghca-announce CPT is not public, so
+        // its permalinks 404 on the frontend.)
+        $action_url = (string) get_post_meta( $post->ID, 'ghca_announce_url', true );
+        if ( $action_url !== '' ) {
+          $item['url'] = $action_url;
         }
 
         $items[] = $item;
