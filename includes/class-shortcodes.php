@@ -132,7 +132,7 @@ final class GHCA_ECD_Shortcodes {
           </div>
         </div>
         <div class="ghca-ecd__welcome-aside">
-          <div class="ghca-ecd__ring" style="background: conic-gradient(var(--ghca-secondary) <?php echo esc_attr( (string) $percent ); ?>%, #e9ecef 0);" role="img" aria-label="<?php echo esc_attr( sprintf( __( '%d%% of required training complete', 'ghca-ecd' ), $percent ) ); ?>">
+          <div class="ghca-ecd__ring" style="background: conic-gradient(var(--ghca-secondary) <?php echo esc_attr( (string) $percent ); ?>%, var(--ent-ring-track, #e9ecef) 0);" role="img" aria-label="<?php echo esc_attr( sprintf( __( '%d%% of required training complete', 'ghca-ecd' ), $percent ) ); ?>">
             <div class="ghca-ecd__ring-inner">
               <span class="ghca-ecd__ring-value"><?php echo esc_html( (string) $percent ); ?><span class="ghca-ecd__ring-pct">%</span></span>
               <span class="ghca-ecd__ring-label"><?php esc_html_e( 'Complete', 'ghca-ecd' ); ?></span>
