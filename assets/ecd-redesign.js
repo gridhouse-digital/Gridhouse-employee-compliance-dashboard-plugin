@@ -472,17 +472,347 @@
     }
   }
 
+  /* ---- Profile photo pop-up ----------------------------------------------------------------------------- */
+  // The employee picks a photo and positions it in a square. The browser cuts out that square at the size
+  // BuddyBoss expects and sends it to BuddyBoss's REST API (POST /buddyboss/v1/members/{id}/avatar), which
+  // stores it with BuddyBoss's own upload code. Because the photo arrives already square, BuddyBoss's automatic
+  // centre crop keeps it exactly as the employee saw it. Remove uses DELETE on the same address.
+  var PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  var PHOTO_MAX_BYTES = 20 * 1024 * 1024; // The photo chosen on the device; what is sent is a small JPEG.
+
+  function initProfilePhoto() {
+    var layer = document.querySelector('.ghca-ecd-ui [data-ghca-ph]');
+    if (!layer) return;
+    var avatars = Array.prototype.slice.call(document.querySelectorAll('.ghca-ecd-ui [data-ghca-ph-open]'));
+    var live = document.querySelector('.ghca-ecd-ui [data-ghca-ph-live]');
+    portal(layer);
+    var q = function (s) { return layer.querySelector(s); };
+    var dialog = q('[data-ghca-ph-dialog]');
+    var fileInput = q('[data-ghca-ph-file]');
+    var drop = q('[data-ghca-ph-drop]');
+    var stage = q('[data-ghca-ph-stage]');
+    var img = q('[data-ghca-ph-img]');
+    var range = q('[data-ghca-ph-range]');
+    var msg = q('[data-ghca-ph-msg]');
+    var msgText = q('[data-ghca-ph-msg-t]');
+    var alt = q('[data-ghca-ph-alt]');
+    var current = q('[data-ghca-ph-current]');
+    var removeBtn = q('[data-ghca-ph-remove]');
+    var cfg = {
+      rest: layer.getAttribute('data-rest') || '',
+      nonce: layer.getAttribute('data-nonce') || '',
+      min: parseInt(layer.getAttribute('data-min'), 10) || 300,
+      size: parseInt(layer.getAttribute('data-size'), 10) || 450,
+      user: layer.getAttribute('data-user') || '',
+      initials: layer.getAttribute('data-initials') || ''
+    };
+    var st = { trigger: null, release: null, busy: false, objectUrl: '', w: 0, h: 0, stage: 0, zoom: 1, maxZoom: 1, x: 0, y: 0, drag: null, pane: 'pick' };
+
+    function say(text) { if (live) { live.textContent = ''; window.setTimeout(function () { live.textContent = text; }, 50); } }
+    function showMsg(text, offerAlt) {
+      msgText.textContent = text || '';
+      msg.hidden = !text;
+      if (alt) alt.hidden = !(text && offerAlt);
+    }
+    function pane(name) {
+      st.pane = name;
+      layer.querySelectorAll('[data-ghca-ph-pane]').forEach(function (el) {
+        var p = el.getAttribute('data-ghca-ph-pane');
+        // The remove question shows over the pick pane.
+        el.hidden = !(p === name || (name === 'remove' && p === 'pick'));
+      });
+      layer.querySelectorAll('[data-ghca-ph-for]').forEach(function (el) { el.hidden = el.getAttribute('data-ghca-ph-for') !== name; });
+      if (name === 'crop') layoutStage();
+    }
+    function setBusy(on, which) {
+      st.busy = on;
+      layer.classList.toggle('is-busy', on);
+      dialog.setAttribute('aria-busy', on ? 'true' : 'false');
+      layer.querySelectorAll('.gh-ph-ft button, [data-ghca-ph-close], [data-ghca-ph-zoom], [data-ghca-ph-range]').forEach(function (b) { b.disabled = on; });
+      var saveT = q('[data-ghca-ph-save-t]');
+      var confT = q('[data-ghca-ph-confirm-t]');
+      if (saveT) saveT.textContent = on && which === 'save' ? 'Saving…' : 'Save photo';
+      if (confT) confT.textContent = on && which === 'remove' ? 'Removing…' : 'Remove';
+    }
+
+    /* Crop geometry: the image covers the square stage; zoom 1 = the short edge fits exactly. ------------ */
+    function scale() { return (st.stage / Math.min(st.w, st.h)) * st.zoom; }
+    function clamp() {
+      var s = scale();
+      st.x = Math.min(0, Math.max(st.stage - st.w * s, st.x));
+      st.y = Math.min(0, Math.max(st.stage - st.h * s, st.y));
+    }
+    function paint() {
+      clamp();
+      img.style.width = st.w + 'px';
+      img.style.height = st.h + 'px';
+      img.style.transform = 'translate(' + st.x + 'px,' + st.y + 'px) scale(' + scale() + ')';
+      range.value = String(Math.round(st.zoom * 100));
+    }
+    function layoutStage() {
+      if (!st.w) return;
+      var before = st.stage;
+      st.stage = stage.clientWidth || before || 280;
+      if (before && before !== st.stage) { st.x *= st.stage / before; st.y *= st.stage / before; }
+      paint();
+    }
+    function zoomTo(z) {
+      var old = scale();
+      st.zoom = Math.max(1, Math.min(st.maxZoom, z));
+      // Keep the middle of the circle on the same part of the photo.
+      var c = st.stage / 2;
+      var k = scale() / old;
+      st.x = c - (c - st.x) * k;
+      st.y = c - (c - st.y) * k;
+      paint();
+    }
+
+    function chooseFile(file) {
+      showMsg('');
+      if (!file) return;
+      if (PHOTO_TYPES.indexOf(file.type) < 0) { showMsg('Choose a JPG, PNG or WebP photo.'); return; }
+      if (file.size > PHOTO_MAX_BYTES) { showMsg('This photo is larger than 20 MB. Choose a smaller one.'); return; }
+      if (st.objectUrl) URL.revokeObjectURL(st.objectUrl);
+      st.objectUrl = URL.createObjectURL(file);
+      var probe = new Image();
+      probe.onload = function () {
+        var w = probe.naturalWidth;
+        var h = probe.naturalHeight;
+        if (Math.min(w, h) < cfg.min) {
+          showMsg('This photo is ' + w + ' × ' + h + ' pixels. Choose one at least ' + cfg.min + ' × ' + cfg.min + ' pixels.');
+          return;
+        }
+        st.w = w; st.h = h;
+        // Zooming in further would cut out fewer pixels than BuddyBoss's photo size.
+        st.maxZoom = Math.max(1, Math.min(4, Math.min(w, h) / cfg.min));
+        range.max = String(Math.round(st.maxZoom * 100));
+        img.src = st.objectUrl;
+        st.zoom = 1;
+        pane('crop');
+        st.stage = stage.clientWidth || 280;
+        var s = scale();
+        st.x = (st.stage - w * s) / 2;
+        st.y = (st.stage - h * s) / 2;
+        paint();
+        stage.focus();
+      };
+      probe.onerror = function () { showMsg('This photo couldn’t be opened. Choose a different one.'); };
+      probe.src = st.objectUrl;
+    }
+
+    function exportBlob(done) {
+      var s = scale();
+      var canvas = document.createElement('canvas');
+      canvas.width = canvas.height = cfg.size;
+      var ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#FFFFFF'; // Transparent PNGs get a white background, not black, as a JPEG.
+      ctx.fillRect(0, 0, cfg.size, cfg.size);
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, -st.x / s, -st.y / s, st.stage / s, st.stage / s, 0, 0, cfg.size, cfg.size);
+      canvas.toBlob(done, 'image/jpeg', 0.9);
+    }
+
+    // BuddyBoss and WordPress answer errors as { code, message, data: { status } }.
+    function readError(res) {
+      return res.json().catch(function () { return {}; }).then(function (body) {
+        var code = (body && body.code) || '';
+        if (res.status === 401 || res.status === 403 || code === 'rest_cookie_invalid_nonce') {
+          return { text: 'Your session has expired. Reload the page and try again.' };
+        }
+        if (res.status === 404 && code === 'rest_no_route') {
+          return { text: 'Photo uploads aren’t available here right now.', alt: true };
+        }
+        if (/^bp_rest_/.test(code) && body.message) return { text: String(body.message), alt: res.status >= 500 };
+        return { text: 'Your photo couldn’t be saved. Try again.', alt: true };
+      });
+    }
+    function request(method, body) {
+      var opts = { method: method, credentials: 'same-origin', headers: { 'X-WP-Nonce': cfg.nonce, 'Accept': 'application/json' } };
+      if (body) opts.body = body;
+      return fetch(cfg.rest, opts);
+    }
+
+    /* Every copy of this person's avatar on the page: the dashboard's, and BuddyBoss's (header, menus). ---- */
+    function updateAvatars(full, thumb) {
+      avatars.forEach(function (a) {
+        a.classList.toggle('has-photo', !!full);
+        var cam = a.querySelector('.gh-ecd-avatar-cam');
+        Array.prototype.slice.call(a.childNodes).forEach(function (n) { if (n !== cam) a.removeChild(n); });
+        var inner;
+        if (full) {
+          inner = document.createElement('img');
+          inner.src = full; inner.alt = ''; inner.width = 64; inner.height = 64;
+        } else if (cfg.initials) {
+          inner = document.createTextNode(cfg.initials);
+        } else {
+          inner = document.createElement('span');
+          inner.className = 'gh-i gh-i--lg i-user';
+          inner.setAttribute('aria-hidden', 'true');
+        }
+        a.insertBefore(inner, cam);
+      });
+      current.classList.toggle('has-photo', !!full);
+      current.textContent = '';
+      if (full) { var p = document.createElement('img'); p.src = full; p.alt = ''; current.appendChild(p); }
+      else { current.textContent = cfg.initials; }
+      layer.setAttribute('data-has-photo', full ? '1' : '0');
+      removeBtn.hidden = !full;
+      if (!cfg.user) return;
+      var src = full || thumb;
+      if (!src) return;
+      document.querySelectorAll('img.avatar.user-' + cfg.user + '-avatar').forEach(function (el) {
+        if (el.closest('[data-ghca-ph]')) return;
+        var big = (parseInt(el.getAttribute('width'), 10) || el.clientWidth || 0) > 150;
+        el.src = big ? (full || thumb) : (thumb || full);
+        el.removeAttribute('srcset');
+      });
+    }
+
+    function save() {
+      if (st.busy || !st.w) return;
+      showMsg('');
+      setBusy(true, 'save');
+      exportBlob(function (blob) {
+        if (!blob) { setBusy(false); showMsg('Your browser couldn’t prepare the photo. Try a different one.'); return; }
+        var fd = new FormData();
+        fd.append('file', blob, 'profile-photo.jpg');
+        fd.append('action', 'bp_avatar_upload');
+        request('POST', fd).then(function (res) {
+          if (!res.ok) return readError(res).then(function (e) { setBusy(false); showMsg(e.text, e.alt); });
+          return res.json().then(function (data) {
+            var item = Array.isArray(data) ? data[0] : data;
+            setBusy(false);
+            updateAvatars((item && item.full) || '', (item && item.thumb) || '');
+            close();
+            say('Your profile photo is saved.');
+          });
+        }).catch(function () { setBusy(false); showMsg('The connection failed. Check your internet and try again.'); });
+      });
+    }
+
+    function remove() {
+      if (st.busy) return;
+      showMsg('');
+      setBusy(true, 'remove');
+      request('DELETE').then(function (res) {
+        if (!res.ok) return readError(res).then(function (e) { setBusy(false); pane('pick'); showMsg(e.text, e.alt); });
+        // Ask BuddyBoss which picture it shows now (its default, or a Gravatar) for the header copies.
+        return request('GET').then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; }).then(function (data) {
+          var item = Array.isArray(data) ? data[0] : data;
+          setBusy(false);
+          updateAvatars('', '');
+          if (item && (item.full || item.thumb)) {
+            document.querySelectorAll('img.avatar.user-' + cfg.user + '-avatar').forEach(function (el) {
+              var big = (parseInt(el.getAttribute('width'), 10) || el.clientWidth || 0) > 150;
+              el.src = big ? (item.full || item.thumb) : (item.thumb || item.full);
+              el.removeAttribute('srcset');
+            });
+          }
+          close();
+          say('Your profile photo is removed.');
+        });
+      }).catch(function () { setBusy(false); pane('pick'); showMsg('The connection failed. Check your internet and try again.'); });
+    }
+
+    function reset() {
+      if (st.objectUrl) URL.revokeObjectURL(st.objectUrl);
+      st.objectUrl = ''; st.w = st.h = 0; st.zoom = 1;
+      img.removeAttribute('src');
+      fileInput.value = '';
+      showMsg('');
+      pane('pick');
+    }
+    function open(trigger) {
+      reset();
+      st.trigger = trigger;
+      layer.hidden = false;
+      layer.setAttribute('aria-hidden', 'false');
+      overlays.open(layer);
+      st.release = trapFocus(dialog, q('.gh-ph-choose input'));
+    }
+    function close() {
+      if (layer.hidden || st.busy) return;
+      layer.hidden = true;
+      layer.setAttribute('aria-hidden', 'true');
+      overlays.close(layer);
+      if (st.release) { st.release(); st.release = null; }
+      reset();
+      if (st.trigger && st.trigger.isConnected) st.trigger.focus();
+    }
+
+    document.addEventListener('click', function (e) {
+      var t = e.target.closest('.ghca-ecd-ui [data-ghca-ph-open]');
+      if (t) { e.preventDefault(); open(t); return; }
+      if (layer.hidden || !layer.contains(e.target)) return;
+      if (e.target.closest('[data-ghca-ph-close]')) { e.preventDefault(); close(); return; }
+      if (e.target.closest('[data-ghca-ph-save]')) { e.preventDefault(); save(); return; }
+      if (e.target.closest('[data-ghca-ph-again]')) { e.preventDefault(); reset(); fileInput.click(); return; }
+      if (e.target.closest('[data-ghca-ph-remove]')) { e.preventDefault(); showMsg(''); pane('remove'); q('[data-ghca-ph-keep]').focus(); return; }
+      if (e.target.closest('[data-ghca-ph-keep]')) { e.preventDefault(); pane('pick'); removeBtn.focus(); return; }
+      if (e.target.closest('[data-ghca-ph-confirm]')) { e.preventDefault(); remove(); return; }
+      var z = e.target.closest('[data-ghca-ph-zoom]');
+      if (z) { e.preventDefault(); zoomTo(st.zoom + 0.25 * parseInt(z.getAttribute('data-ghca-ph-zoom'), 10)); }
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !layer.hidden && overlays.isTop(layer)) { e.preventDefault(); close(); }
+    });
+    fileInput.addEventListener('change', function () { chooseFile(fileInput.files && fileInput.files[0]); });
+    range.addEventListener('input', function () { zoomTo(parseInt(range.value, 10) / 100); });
+
+    // Drag and drop onto the drop zone (and anywhere on the pick pane).
+    ['dragenter', 'dragover'].forEach(function (ev) {
+      drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('is-over'); });
+    });
+    ['dragleave', 'drop'].forEach(function (ev) {
+      drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('is-over'); });
+    });
+    drop.addEventListener('drop', function (e) { chooseFile(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]); });
+
+    // Moving the photo: pointer drag, the mouse wheel to zoom, and the keyboard.
+    stage.addEventListener('pointerdown', function (e) {
+      if (!st.w || st.busy) return;
+      st.drag = { id: e.pointerId, x: e.clientX, y: e.clientY, ox: st.x, oy: st.y };
+      try { stage.setPointerCapture(e.pointerId); } catch (err) { /* older browsers */ }
+      stage.classList.add('is-dragging');
+    });
+    stage.addEventListener('pointermove', function (e) {
+      if (!st.drag || st.drag.id !== e.pointerId) return;
+      st.x = st.drag.ox + (e.clientX - st.drag.x);
+      st.y = st.drag.oy + (e.clientY - st.drag.y);
+      paint();
+    });
+    function endDrag() { st.drag = null; stage.classList.remove('is-dragging'); }
+    stage.addEventListener('pointerup', endDrag);
+    stage.addEventListener('pointercancel', endDrag);
+    stage.addEventListener('wheel', function (e) {
+      if (!st.w) return;
+      e.preventDefault();
+      zoomTo(st.zoom * (e.deltaY < 0 ? 1.08 : 1 / 1.08));
+    }, { passive: false });
+    stage.addEventListener('keydown', function (e) {
+      if (!st.w) return;
+      var step = e.shiftKey ? 40 : 10;
+      var moves = { ArrowLeft: [step, 0], ArrowRight: [-step, 0], ArrowUp: [0, step], ArrowDown: [0, -step] };
+      if (moves[e.key]) { e.preventDefault(); st.x += moves[e.key][0]; st.y += moves[e.key][1]; paint(); return; }
+      if (e.key === '+' || e.key === '=') { e.preventDefault(); zoomTo(st.zoom + 0.25); }
+      if (e.key === '-' || e.key === '_') { e.preventDefault(); zoomTo(st.zoom - 0.25); }
+    });
+    window.addEventListener('resize', function () { if (!layer.hidden && st.pane === 'crop') layoutStage(); });
+  }
+
   // Build marker: type ghcaEcdRedesign in the browser console to see which script build the page runs.
-  window.ghcaEcdRedesign = { build: '1.6.0', drawer: false, viewer: false };
+  window.ghcaEcdRedesign = { build: '1.6.1', drawer: false, viewer: false, photo: false };
 
   function init() {
     window.ghcaEcdRedesign.drawer = !!document.querySelector('.ghca-ecd-ui #gh-odp-drawer');
     window.ghcaEcdRedesign.viewer = !!document.querySelector('.ghca-ecd-ui [data-ghca-cv]');
+    window.ghcaEcdRedesign.photo = !!document.querySelector('.ghca-ecd-ui [data-ghca-ph]');
     setScrollbarWidth();
     window.addEventListener('resize', setScrollbarWidth);
     initTickers();
     initBulletinDrawer();
     initCertViewer();
+    initProfilePhoto();
   }
 
   if (document.readyState === 'loading') {

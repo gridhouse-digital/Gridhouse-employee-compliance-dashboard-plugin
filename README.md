@@ -52,8 +52,11 @@ full new dashboard once per page; admins see a note asking to replace them.
   (`GHCA_Audit_Calculator`, read-only). Nothing is written from this card.
 - **Required actions** are all completable. Choose the company policies course
   in Settings → Employee Dashboard (`ghca_ecd_policies_course_id`).
-- **Profile photo** is the BuddyBoss avatar; changing it uses BuddyBoss's own
-  change-avatar screen. Photos never go into certificates or packets.
+- **Profile photo** is the BuddyBoss avatar. Clicking it opens a pop-up (choose,
+  crop to a circle, save or remove) that saves through BuddyBoss's REST API
+  (`/buddyboss/v1/members/{id}/avatar`). Without that API the avatar links to
+  BuddyBoss's change-avatar screen instead (`ghca_ecd_photo_popup` filter turns
+  the pop-up off). Photos never go into certificates or packets.
 - **CSS** is built, not hand-edited: `sh design-references/build-ecd-redesign.sh`
   scopes the canvas CSS under `.ghca-ecd-ui` and writes `assets/ecd-redesign.css`.
 - **Preview without WordPress**: `php -S 127.0.0.1:8765 -t .` then open

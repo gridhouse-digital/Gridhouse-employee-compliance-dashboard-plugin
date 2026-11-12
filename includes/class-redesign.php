@@ -197,14 +197,23 @@ final class GHCA_ECD_Redesign {
     $role    = (string) apply_filters( 'ghca_employee_role_label', self::role_label( (int) $data['user_id'] ), (int) $data['user_id'] );
     $program = self::is_new_hire( $data ) ? __( 'New-hire onboarding', 'ghca-ecd' ) : __( 'Annual training', 'ghca-ecd' );
 
+    $photo_cfg = self::photo_config( (int) $data['user_id'] );
+    if ( $photo_cfg ) {
+      $photo_cfg['initials'] = self::avatar_initials( $data );
+      self::$overlays       .= self::photo_dialog_html( $photo_cfg );
+    }
+
     $h  = '<section class="gh-ecd-hello">';
-    $h .= self::avatar_html( $data );
+    $h .= self::avatar_html( $data, $photo_cfg );
     $h .= '<div class="gh-ecd-hello-t"><h1 class="gh-h1">' . esc_html( sprintf( /* translators: %s: first name */ __( 'Welcome back, %s', 'ghca-ecd' ), $first ) ) . '</h1>';
     $h .= '<div class="gh-meta">';
     if ( '' !== $role ) {
       $h .= '<span class="gh-badge gh-badge--brand">' . esc_html( $role ) . '</span>';
     }
-    $h .= '<span>' . esc_html( $program ) . '</span><span class="gh-ecd-today">' . esc_html( wp_date( 'l, F j' ) ) . '</span>' . self::remove_photo_html( (int) $data['user_id'] ) . '</div></div>';
+    // With the photo pop-up, "Remove photo" lives in the pop-up; the form here is the fallback without it.
+    $h .= '<span>' . esc_html( $program ) . '</span><span class="gh-ecd-today">' . esc_html( wp_date( 'l, F j' ) ) . '</span>' . ( $photo_cfg ? '' : self::remove_photo_html( (int) $data['user_id'] ) ) . '</div>';
+    $h .= $photo_cfg ? '<span class="gh-sr" role="status" aria-live="polite" data-ghca-ph-live></span>' : '';
+    $h .= '</div>';
     $h .= '<div class="gh-ecd-hello-p">';
     $h .= '<div class="gh-ring gh-ecd-ring" style="--p: ' . esc_attr( (string) $percent ) . ';" role="img" aria-label="' . esc_attr( sprintf( /* translators: %d: percent */ __( '%d%% of required training complete', 'ghca-ecd' ), $percent ) ) . '"><span class="gh-ring-v">' . esc_html( $percent . '%' ) . '</span></div>';
     $h .= '<div><strong>' . esc_html(
@@ -1117,22 +1126,159 @@ final class GHCA_ECD_Redesign {
   }
 
   /** @param array<string,mixed> $data */
-  private static function avatar_html( array $data ): string {
-    $uid   = (int) $data['user_id'];
-    $user  = get_userdata( $uid );
-    $init  = self::name_initials( (string) ( $data['first_name'] ?? '' ), (string) ( $data['last_name'] ?? '' ), (string) ( $data['display_name'] ?? '' ), $user ? (string) $user->user_login : '' );
-    $photo = '';
-    if ( self::has_uploaded_photo( $uid ) && function_exists( 'bp_core_fetch_avatar' ) ) {
-      $photo = (string) bp_core_fetch_avatar( array( 'item_id' => $uid, 'object' => 'user', 'type' => 'full', 'html' => false, 'no_grav' => true ) );
+  private static function avatar_initials( array $data ): string {
+    $user = get_userdata( (int) $data['user_id'] );
+    return self::name_initials( (string) ( $data['first_name'] ?? '' ), (string) ( $data['last_name'] ?? '' ), (string) ( $data['display_name'] ?? '' ), $user ? (string) $user->user_login : '' );
+  }
+
+  /** The uploaded photo's URL, or '' when the employee has none (initials show instead). */
+  private static function photo_url( int $user_id ): string {
+    if ( ! self::has_uploaded_photo( $user_id ) || ! function_exists( 'bp_core_fetch_avatar' ) ) {
+      return '';
     }
+    return (string) bp_core_fetch_avatar( array( 'item_id' => $user_id, 'object' => 'user', 'type' => 'full', 'html' => false, 'no_grav' => true ) );
+  }
+
+  /**
+   * @param array<string,mixed> $data
+   * @param array<string,mixed> $photo_cfg From photo_config(); empty when the pop-up is not available.
+   */
+  private static function avatar_html( array $data, array $photo_cfg = array() ): string {
+    $uid   = (int) $data['user_id'];
+    $init  = self::avatar_initials( $data );
+    $photo = self::photo_url( $uid );
     $inner = '' !== $photo
       ? '<img src="' . esc_url( $photo ) . '" alt="" width="64" height="64" loading="lazy" decoding="async">'
       : ( '' !== $init ? esc_html( $init ) : self::icon( 'user', 'lg' ) );
-    $url = self::change_photo_url( $uid );
-    if ( '' === $url ) {
-      return '<span class="gh-avatar gh-avatar--xl gh-avatar--brand gh-ecd-avatar' . ( '' !== $photo ? ' has-photo' : '' ) . '" aria-hidden="true">' . $inner . '</span>';
+    $class = 'gh-avatar gh-avatar--xl gh-avatar--brand gh-ecd-avatar' . ( '' !== $photo ? ' has-photo' : '' );
+    $cam   = '<span class="gh-ecd-avatar-cam" aria-hidden="true"><span class="gh-i i-camera"></span></span>';
+    $label = esc_attr__( 'Change profile photo', 'ghca-ecd' );
+    $url   = self::uploads_disabled() ? '' : self::change_photo_url( $uid );
+
+    if ( $photo_cfg ) {
+      // The pop-up opens on click; without JavaScript the link still goes to BuddyBoss's change-photo screen.
+      $attrs = ' aria-haspopup="dialog" aria-controls="ghca-ecd-photo" aria-label="' . $label . '" title="' . $label . '" data-ghca-ph-open';
+      return '' !== $url
+        ? '<a class="' . $class . '" href="' . esc_url( $url ) . '"' . $attrs . '>' . $inner . $cam . '</a>'
+        : '<button type="button" class="' . $class . '"' . $attrs . '>' . $inner . $cam . '</button>';
     }
-    return '<a class="gh-avatar gh-avatar--xl gh-avatar--brand gh-ecd-avatar' . ( '' !== $photo ? ' has-photo' : '' ) . '" href="' . esc_url( $url ) . '" aria-label="' . esc_attr__( 'Change profile photo', 'ghca-ecd' ) . '" title="' . esc_attr__( 'Change profile photo', 'ghca-ecd' ) . '">' . $inner . '<span class="gh-ecd-avatar-cam" aria-hidden="true"><span class="gh-i i-camera"></span></span></a>';
+    if ( '' === $url ) {
+      return '<span class="' . $class . '" aria-hidden="true">' . $inner . '</span>';
+    }
+    return '<a class="' . $class . '" href="' . esc_url( $url ) . '" aria-label="' . $label . '" title="' . $label . '">' . $inner . $cam . '</a>';
+  }
+
+  /** BuddyBoss setting "Allow members to upload profile photos" switched off. */
+  private static function uploads_disabled(): bool {
+    return function_exists( 'bp_disable_avatar_uploads' ) && (bool) bp_disable_avatar_uploads();
+  }
+
+  /**
+   * Pixel size of the square photo the pop-up sends. BuddyBoss needs at least its "full" avatar size and shrinks
+   * anything wider than its original-photo limit, so the photo is sent at twice the full size, capped at that
+   * limit: sharp on high-density screens and never re-compressed by BuddyBoss.
+   */
+  public static function photo_export_size( int $full_w, int $full_h, int $original_max ): int {
+    $side = max( 1, $full_w, $full_h );
+    return max( $side, min( $side * 2, $original_max > 0 ? $original_max : $side * 2 ) );
+  }
+
+  /**
+   * Settings for the profile photo pop-up, or an empty array when it can't work here (no BuddyBoss / BuddyPress
+   * REST API, uploads switched off in BuddyBoss, or the filter says no). Without it the avatar links to
+   * BuddyBoss's change-photo screen as before.
+   *
+   * The pop-up saves through BuddyBoss's public REST API (POST and DELETE /buddyboss/v1/members/{id}/avatar),
+   * which checks the login, the REST nonce and that the user may edit this avatar, then stores the photo with
+   * BuddyBoss's own upload and crop code and fires `xprofile_avatar_uploaded`.
+   *
+   * @return array<string,mixed>
+   */
+  public static function photo_config( int $user_id ): array {
+    $ready = $user_id > 0
+      && $user_id === (int) get_current_user_id()
+      && function_exists( 'rest_url' )
+      && function_exists( 'bp_core_avatar_full_width' )
+      && class_exists( 'BP_REST_Attachments_Member_Avatar_Endpoint' )
+      && ! self::uploads_disabled();
+    if ( ! (bool) apply_filters( 'ghca_ecd_photo_popup', $ready, $user_id ) || ! $ready ) {
+      return array();
+    }
+    $ns   = function_exists( 'bp_rest_namespace' ) ? (string) bp_rest_namespace() : 'buddyboss';
+    $ver  = function_exists( 'bp_rest_version' ) ? (string) bp_rest_version() : 'v1';
+    $full = (int) bp_core_avatar_full_width();
+    $fh   = function_exists( 'bp_core_avatar_full_height' ) ? (int) bp_core_avatar_full_height() : $full;
+    $max  = function_exists( 'bp_core_avatar_original_max_width' ) ? (int) bp_core_avatar_original_max_width() : 0;
+    $side = max( 1, $full, $fh );
+
+    return array(
+      'user_id'   => $user_id,
+      'rest'      => (string) rest_url( sprintf( '%s/%s/members/%d/avatar', $ns, $ver, $user_id ) ),
+      'nonce'     => (string) wp_create_nonce( 'wp_rest' ),
+      'min'       => $side,
+      'size'      => self::photo_export_size( $full, $fh, $max ),
+      'has_photo' => self::has_uploaded_photo( $user_id ),
+      'photo'     => self::photo_url( $user_id ),
+      'fallback'  => self::change_photo_url( $user_id ),
+    );
+  }
+
+  /**
+   * Profile photo pop-up: choose a photo, crop it to a square, save. Same overlay pattern as the certificate
+   * viewer (assets/ecd-redesign.js moves it to the end of <body> and handles focus and Escape).
+   *
+   * @param array<string,mixed> $cfg From photo_config().
+   */
+  public static function photo_dialog_html( array $cfg ): string {
+    $min      = (int) $cfg['min'];
+    $fallback = (string) $cfg['fallback'];
+    $preview  = '' !== (string) $cfg['photo']
+      ? '<img src="' . esc_url( (string) $cfg['photo'] ) . '" alt="">'
+      : ( '' !== (string) ( $cfg['initials'] ?? '' ) ? esc_html( (string) $cfg['initials'] ) : self::icon( 'user', 'lg' ) );
+
+    $h  = '<div class="gh-mod-layer gh-ph-layer" id="ghca-ecd-photo" hidden aria-hidden="true" data-ghca-ph';
+    $h .= ' data-rest="' . esc_url( (string) $cfg['rest'] ) . '" data-nonce="' . esc_attr( (string) $cfg['nonce'] ) . '" data-min="' . esc_attr( (string) $min ) . '" data-size="' . esc_attr( (string) (int) $cfg['size'] ) . '" data-user="' . esc_attr( (string) (int) $cfg['user_id'] ) . '" data-has-photo="' . ( ! empty( $cfg['has_photo'] ) ? '1' : '0' ) . '" data-initials="' . esc_attr( (string) ( $cfg['initials'] ?? '' ) ) . '">';
+    $h .= '<div class="gh-scrim" data-ghca-ph-close></div>';
+    $h .= '<div class="gh-modal gh-ph" role="dialog" aria-modal="true" aria-labelledby="ghca-ecd-ph-t" aria-describedby="ghca-ecd-ph-sub" data-ghca-ph-dialog>';
+    $h .= '<div class="gh-modal-hd"><span class="gh-stat-ico gh-ph-ico" aria-hidden="true">' . self::icon( 'camera' ) . '</span>';
+    $h .= '<div class="gh-ph-hd-t"><h2 class="gh-h3" id="ghca-ecd-ph-t">' . esc_html__( 'Profile photo', 'ghca-ecd' ) . '</h2><p class="gh-p gh-secondary" id="ghca-ecd-ph-sub">' . esc_html__( 'Shown on your dashboard and across the site. Never added to certificates.', 'ghca-ecd' ) . '</p></div>';
+    $h .= '<button type="button" class="gh-btn gh-btn--ghost gh-btn--icon gh-ph-x" data-ghca-ph-close aria-label="' . esc_attr__( 'Close', 'ghca-ecd' ) . '">' . self::icon( 'x' ) . '</button></div>';
+
+    $h .= '<div class="gh-modal-bd">';
+    // Pick: the current photo and a drop zone.
+    $h .= '<div class="gh-ph-pick" data-ghca-ph-pane="pick">';
+    $h .= '<span class="gh-avatar gh-avatar--brand gh-ph-current' . ( '' !== (string) $cfg['photo'] ? ' has-photo' : '' ) . '" data-ghca-ph-current>' . $preview . '</span>';
+    $h .= '<div class="gh-drop gh-ph-drop" data-ghca-ph-drop><span class="gh-ph-drop-ico" aria-hidden="true">' . self::icon( 'upload', 'lg' ) . '</span><div class="gh-ph-drop-t">';
+    $h .= '<strong>' . esc_html__( 'Choose a photo', 'ghca-ecd' ) . '</strong><span class="gh-small gh-muted gh-ph-drag">' . esc_html__( 'or drag one here', 'ghca-ecd' ) . '</span>';
+    /* translators: %1$d, %2$d: minimum width and height in pixels */
+    $h .= '<span class="gh-small gh-muted" id="ghca-ecd-ph-rules">' . esc_html( sprintf( __( 'JPG, PNG or WebP, at least %1$d × %2$d pixels.', 'ghca-ecd' ), $min, $min ) ) . '</span></div>';
+    $h .= '<label class="gh-btn gh-btn--secondary gh-ph-choose">' . self::icon( 'upload' ) . '<span>' . esc_html__( 'Choose photo', 'ghca-ecd' ) . '</span><input type="file" class="gh-ph-file" accept="image/jpeg,image/png,image/webp" aria-describedby="ghca-ecd-ph-rules" data-ghca-ph-file></label>';
+    $h .= '</div></div>';
+    // Crop: a square stage with a round guide, zoom controls.
+    $h .= '<div class="gh-ph-crop" hidden data-ghca-ph-pane="crop">';
+    $h .= '<div class="gh-ph-stage" tabindex="0" role="application" aria-roledescription="' . esc_attr__( 'photo crop area', 'ghca-ecd' ) . '" aria-label="' . esc_attr__( 'Photo position. Drag, or use the arrow keys, to move the photo. Plus and minus zoom.', 'ghca-ecd' ) . '" data-ghca-ph-stage><img alt="" draggable="false" data-ghca-ph-img><span class="gh-ph-guide" aria-hidden="true"></span></div>';
+    $h .= '<div class="gh-ph-zoom"><button type="button" class="gh-btn gh-btn--ghost gh-btn--icon gh-btn--sm" data-ghca-ph-zoom="-1" aria-label="' . esc_attr__( 'Zoom out', 'ghca-ecd' ) . '">' . self::icon( 'zoom-out' ) . '</button>';
+    $h .= '<input type="range" class="gh-ph-range" min="100" max="400" step="1" value="100" aria-label="' . esc_attr__( 'Zoom', 'ghca-ecd' ) . '" data-ghca-ph-range>';
+    $h .= '<button type="button" class="gh-btn gh-btn--ghost gh-btn--icon gh-btn--sm" data-ghca-ph-zoom="1" aria-label="' . esc_attr__( 'Zoom in', 'ghca-ecd' ) . '">' . self::icon( 'zoom-in' ) . '</button></div>';
+    $h .= '<p class="gh-small gh-muted gh-ph-hint">' . esc_html__( 'Drag the photo to position it inside the circle.', 'ghca-ecd' ) . '</p>';
+    $h .= '</div>';
+    // Messages (errors, the remove question).
+    $h .= '<div class="gh-ph-msg" role="alert" hidden data-ghca-ph-msg><span class="gh-ph-msg-t" data-ghca-ph-msg-t></span>';
+    if ( '' !== $fallback ) {
+      $h .= ' <a class="gh-ph-alt" href="' . esc_url( $fallback ) . '" hidden data-ghca-ph-alt>' . esc_html__( 'Use your profile page instead', 'ghca-ecd' ) . '</a>';
+    }
+    $h .= '</div>';
+    $h .= '<p class="gh-ph-ask" hidden data-ghca-ph-pane="remove">' . self::icon( 'info' ) . '<span>' . esc_html__( 'Remove your photo? Your initials will show instead.', 'ghca-ecd' ) . '</span></p>';
+    $h .= '</div>';
+
+    // Footer: one row of buttons per pane.
+    $h .= '<div class="gh-modal-ft gh-ph-ft">';
+    $h .= '<div class="gh-ph-row" data-ghca-ph-for="pick"><button type="button" class="gh-btn gh-btn--danger-quiet gh-ph-rm"' . ( empty( $cfg['has_photo'] ) ? ' hidden' : '' ) . ' data-ghca-ph-remove>' . self::icon( 'trash' ) . esc_html__( 'Remove photo', 'ghca-ecd' ) . '</button><span class="gh-ph-grow"></span><button type="button" class="gh-btn gh-btn--secondary" data-ghca-ph-close>' . esc_html__( 'Cancel', 'ghca-ecd' ) . '</button></div>';
+    $h .= '<div class="gh-ph-row" hidden data-ghca-ph-for="crop"><button type="button" class="gh-btn gh-btn--ghost" data-ghca-ph-again>' . self::icon( 'refresh' ) . esc_html__( 'Choose another', 'ghca-ecd' ) . '</button><span class="gh-ph-grow"></span><button type="button" class="gh-btn gh-btn--secondary" data-ghca-ph-close>' . esc_html__( 'Cancel', 'ghca-ecd' ) . '</button><button type="button" class="gh-btn gh-btn--primary" data-ghca-ph-save>' . self::icon( 'check' ) . '<span data-ghca-ph-save-t>' . esc_html__( 'Save photo', 'ghca-ecd' ) . '</span></button></div>';
+    $h .= '<div class="gh-ph-row" hidden data-ghca-ph-for="remove"><span class="gh-ph-grow"></span><button type="button" class="gh-btn gh-btn--secondary" data-ghca-ph-keep>' . esc_html__( 'Keep photo', 'ghca-ecd' ) . '</button><button type="button" class="gh-btn gh-btn--danger" data-ghca-ph-confirm>' . self::icon( 'trash' ) . '<span data-ghca-ph-confirm-t>' . esc_html__( 'Remove', 'ghca-ecd' ) . '</span></button></div>';
+    $h .= '</div></div></div>';
+
+    return $h;
   }
 
   /** "Remove photo": a small own-account form, shown only when an uploaded photo exists. */

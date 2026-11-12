@@ -327,6 +327,13 @@ html.ghca-ecd--overlay-open, html.ghca-ecd--overlay-open body { overflow: hidden
 :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-blk-t { flex: 1 1 260px; min-width: 0; }
 :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-blk-t > span { display: block; }
 :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-blk-l { font-weight: 600; }
+/* Long course names ("Continue Prevention, Detection & Reporting of Abuse") wrap inside the card instead of
+   running past its edge: buttons are nowrap in the design system. The arrow stays on the last line. */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app .gh-ecd-blk-go { max-width: 100%; min-width: 0; white-space: normal; text-align: left; line-height: 1.35; padding-top: 7px; padding-bottom: 7px; overflow-wrap: anywhere; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-blk-go > .gh-i { flex: none; }
+@media (max-width: 719px) {
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app .gh-ecd-blk-go { flex: 1 1 100%; justify-content: space-between; min-height: 44px; font-size: var(--gh-text-sm); }
+}
 :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-allset { display: flex; align-items: center; gap: 12px; padding: 16px 20px 20px; }
 :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-allset > .gh-i { color: var(--gh-status-success-fg); flex: none; }
 :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-allset p { margin: 2px 0 0; }
@@ -366,4 +373,82 @@ html.ghca-ecd--overlay-open, html.ghca-ecd--overlay-open body { overflow: hidden
   :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ticker-item:first-child { flex: 1 1 auto; min-width: 0; padding-right: 0; }
   :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ticker-item:first-child::after { display: none; }
   :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ticker-item:first-child a { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+/* ==========================================================================
+ * 1.6.1 Profile photo pop-up (choose, crop to a square, save through BuddyBoss's REST API)
+ * ========================================================================== */
+/* The avatar is a button when there's no change-photo page to link to. */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app button.gh-ecd-avatar { border: 0; padding: 0; margin: 0; font: inherit; font-weight: 600; cursor: pointer; color: var(--gh-color-on-primary); background-color: var(--gh-color-primary); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app button.gh-ecd-avatar.has-photo { background-color: var(--gh-surface-sunken); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app button.gh-ecd-avatar:hover .gh-ecd-avatar-cam { background: var(--gh-surface-hover); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app button.gh-ecd-avatar:focus-visible { outline: none; box-shadow: var(--gh-focus-ring); }
+
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-mod-layer.gh-ph-layer { z-index: 100006; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-layer .gh-modal { position: relative; left: auto; top: auto; transform: none; z-index: 1; width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 32px); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph .gh-modal-hd { align-items: center; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-ico { width: 40px; height: 40px; flex: none; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-hd-t { flex: 1; min-width: 0; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-hd-t .gh-p { margin: 2px 0 0; font-size: var(--gh-text-sm); line-height: var(--gh-lh-sm); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph [hidden] { display: none !important; }
+
+/* Pick: the current photo beside the drop zone. */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-pick { display: flex; align-items: center; gap: 20px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-current { width: 96px; height: 96px; font-size: 32px; overflow: hidden; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-current.has-photo { background: var(--gh-surface-sunken); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-current > img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-drop { flex: 1 1 auto; min-width: 0; flex-wrap: wrap; transition: border-color var(--gh-dur) var(--gh-ease), background var(--gh-dur) var(--gh-ease); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-drop.is-over { border-color: var(--gh-focus); background: var(--gh-surface-selected); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-drop-ico { color: var(--gh-text-muted); display: inline-grid; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-drop-t { flex: 1 1 160px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-drop-t strong { font-size: var(--gh-text-sm); }
+/* The real file input covers its label button: one click target, and its focus is drawn on the label. */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app label.gh-ph-choose { position: relative; overflow: hidden; cursor: pointer; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-file { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 0; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app label.gh-ph-choose:focus-within { box-shadow: var(--gh-focus-ring); }
+
+/* Crop: square stage, the photo moved with a transform, a round guide over a dimmed outside. */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-crop { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-stage { position: relative; width: min(320px, 100%); aspect-ratio: 1 / 1; overflow: hidden; border-radius: var(--gh-radius-md); background: var(--gh-neutral-900); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-stage.is-dragging { cursor: grabbing; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-stage:focus-visible { outline: none; box-shadow: var(--gh-focus-ring); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-stage > img { position: absolute; left: 0; top: 0; max-width: none; max-height: none; transform-origin: 0 0; pointer-events: none; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-guide { position: absolute; inset: 0; border-radius: 50%; box-shadow: 0 0 0 999px rgba(20, 20, 20, .5); outline: 2px solid rgba(255, 255, 255, .85); outline-offset: -2px; pointer-events: none; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-zoom { display: flex; align-items: center; gap: 8px; width: min(320px, 100%); }
+/* Zoom slider drawn explicitly (the base styles reset inputs, which left only the handle visible). */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-range { flex: 1 1 auto; min-width: 0; height: 28px; margin: 0; padding: 0; background: transparent; border: 0; -webkit-appearance: none; appearance: none; cursor: pointer; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-range::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: var(--gh-border-strong); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-range::-moz-range-track { height: 4px; border-radius: 2px; background: var(--gh-border-strong); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-range::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--gh-color-primary); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; margin-top: -7px; border-radius: 50%; background: var(--gh-color-primary); border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px var(--gh-border-strong); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-range::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: var(--gh-color-primary); border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px var(--gh-border-strong); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-range:focus-visible { outline: none; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-range:focus-visible::-webkit-slider-thumb { box-shadow: var(--gh-focus-ring); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-range:focus-visible::-moz-range-thumb { box-shadow: var(--gh-focus-ring); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-hint { margin: 0; text-align: center; }
+
+/* Messages. */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-msg { margin: 0; padding: 10px 12px; border-radius: var(--gh-radius-sm); background: var(--gh-status-danger-bg); color: var(--gh-status-danger-fg); border: 1px solid var(--gh-status-danger-border); font-size: var(--gh-text-sm); line-height: var(--gh-lh-sm); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-ph-alt, :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-ph-alt:is(:link, :visited, :hover, :focus, :active) { color: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; background: none; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-ask { display: flex; align-items: center; gap: 10px; margin: 0; padding: 10px 12px; border-radius: var(--gh-radius-sm); background: var(--gh-status-warning-bg); color: var(--gh-status-warning-fg); border: 1px solid var(--gh-status-warning-border); font-size: var(--gh-text-sm); line-height: var(--gh-lh-sm); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-ask > .gh-i { flex: none; }
+
+/* Footer rows. */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-ft { display: block; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-grow { flex: 1 1 auto; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-layer.is-busy .gh-ph-stage { cursor: progress; }
+
+@media (max-width: 719px) {
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-layer { padding: 0; place-items: end stretch; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-layer .gh-modal { width: 100vw; max-height: 100vh; border-radius: var(--gh-radius-xl) var(--gh-radius-xl) 0 0; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph .gh-modal-hd, :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph .gh-modal-bd { padding-left: 16px; padding-right: 16px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph .gh-modal-ft { padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-pick { flex-direction: column; gap: 16px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-drop { width: 100%; box-sizing: border-box; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-drag { display: none; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-choose { width: 100%; justify-content: center; min-height: 48px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-row .gh-btn { min-height: 48px; flex: 1 1 auto; justify-content: center; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-row .gh-ph-grow { display: none; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ph-zoom .gh-btn--icon { min-width: 44px; min-height: 44px; }
 }

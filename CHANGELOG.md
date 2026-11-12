@@ -2,6 +2,36 @@
 
 All notable changes to the Gridhouse Employee Compliance Dashboard are documented here.
 
+## [1.6.1]
+
+### Added
+
+- **Profile photo pop-up.** Clicking the welcome avatar opens a pop-up instead of leaving the dashboard: choose a
+  photo (or drag one in), position it in the circle, zoom, save. "Remove photo" moved into the pop-up and asks
+  first. The dashboard avatar and the BuddyBoss avatars elsewhere on the page (header) update without a reload.
+- Saving goes through BuddyBoss's public REST API (`POST` / `DELETE /buddyboss/v1/members/{id}/avatar`) with the
+  WordPress REST nonce, so BuddyBoss checks the login and permission, stores the photo with its own upload code
+  and fires `xprofile_avatar_uploaded`. The browser sends an already-square JPEG at twice BuddyBoss's full avatar
+  size (capped at its original-photo limit; 450 × 450 with BuddyBoss defaults), so BuddyBoss's automatic centre
+  crop keeps exactly what the employee saw.
+- Photos must be JPG, PNG or WebP, at least BuddyBoss's full avatar size (300 × 300 by default), 20 MB at most.
+  Zoom stops before the crop would use fewer pixels than that.
+- Clear messages for an expired session, a BuddyBoss upload error and a missing REST API, with a link to the
+  BuddyBoss profile page as the fallback.
+- New filter `ghca_ecd_photo_popup` (return false to keep the 1.6.0 link to the change-photo screen).
+
+### Unchanged fallback
+
+- Without BuddyBoss's REST API, or before the page script has loaded, the avatar still links to BuddyBoss's
+  change-photo screen and the separate "Remove photo" form shows as in 1.6.0. With BuddyBoss photo uploads
+  switched off, the avatar is not clickable.
+
+### Fixed
+
+- **Phones:** a long course name on a "What's blocking my packet" button ("Continue Prevention, Detection &
+  Reporting of Abuse") made the page wider than the screen (433px on a 375px phone), so every card looked cut
+  off on the right. The buttons now wrap inside the card and take the full card width on phones.
+
 ## [1.6.0]
 
 Redesign fixes. Design system, fonts and colours unchanged. No change to the admin plugin's schema, roles,

@@ -27,7 +27,7 @@ APP_DROP_EXACT = {'html', 'body', '#root'}
 # and button hovers with !important, which plain rules cannot beat, so these
 # properties are marked !important on every rule for them and on every rule
 # that targets an `a` element.
-GUARD = re.compile(r'\.gh-(qlink|btn|stat|certl|ticker-item|ticker-all|ann|tab|nav|logo|skip|table|pager-btns|linkbtn|bul-all|bul-x|bul-step|ecd-act|ecd-lock)(?![a-z0-9_])')
+GUARD = re.compile(r'\.gh-(qlink|btn|stat|certl|ticker-item|ticker-all|ann|tab|nav|logo|skip|table|pager-btns|linkbtn|bul-all|bul-x|bul-step|ecd-act|ecd-lock|ph-choose|ecd-avatar)(?![a-z0-9_])')
 GUARD_A = re.compile(r'(?:^|[\s>+~(,])a(?=[.:\[\s,)>]|$)')
 GUARD_PROPS = {'color', 'background', 'background-color', 'border-color',
                'text-decoration', 'text-decoration-line', 'text-decoration-color'}

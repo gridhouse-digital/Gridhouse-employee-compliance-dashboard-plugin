@@ -9,8 +9,58 @@
 //   &pol=none|notstarted|progress|done   company policies course
 //   &admin=0|1            viewer is an admin looking at the employee page
 //   &photo=0|1            employee has an uploaded BuddyBoss photo
+//   &pop=1|0              BuddyBoss REST API present (photo pop-up) or not (link to the change-photo screen)
+//   &upl=1|0              BuddyBoss "members can upload profile photos" setting
+//   &rest=ok|denied|fail|noroute   how the stand-in REST endpoint answers the pop-up
 if ( 'cli' !== PHP_SAPI && ! in_array( $_SERVER['REMOTE_ADDR'] ?? '', array( '127.0.0.1', '::1' ), true ) ) {
   http_response_code( 403 );
+  exit;
+}
+
+/*
+ * Stand-in for BuddyBoss's member avatar endpoint (/buddyboss/v1/members/{id}/avatar). It stores nothing: it
+ * checks what the pop-up sends the way BuddyBoss would (REST nonce, a `file` upload, an image at least the full
+ * avatar size) and answers in BuddyBoss's shapes. `received` reports what arrived, for the tests.
+ */
+if ( isset( $_GET['avatar_rest'] ) ) {
+  header( 'Content-Type: application/json; charset=utf-8' );
+  $mode   = (string) $_GET['avatar_rest'];
+  $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+  $fail   = static function ( int $status, string $code, string $message ): void {
+    http_response_code( $status );
+    echo json_encode( array( 'code' => $code, 'message' => $message, 'data' => array( 'status' => $status ) ) );
+    exit;
+  };
+  $person = static function ( string $fill ): string {
+    return 'data:image/svg+xml;utf8,' . rawurlencode( "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='" . $fill . "'/><circle cx='32' cy='25' r='12' fill='#fff'/><path d='M10 64c3-15 13-22 22-22s19 7 22 22z' fill='#fff'/></svg>" );
+  };
+  if ( 'noroute' === $mode ) {
+    $fail( 404, 'rest_no_route', 'No route was found matching the URL and request method.' );
+  }
+  if ( 'denied' === $mode || 'nonce123' !== ( $_SERVER['HTTP_X_WP_NONCE'] ?? '' ) ) {
+    $fail( 403, 'rest_cookie_invalid_nonce', 'Cookie check failed' );
+  }
+  if ( 'POST' === $method ) {
+    if ( 'fail' === $mode ) {
+      $fail( 500, 'bp_rest_attachments_member_avatar_upload_error', 'Upload failed! Error was: The uploaded file exceeds the maximum upload size.' );
+    }
+    $file = $_FILES['file'] ?? null;
+    if ( ! $file || UPLOAD_ERR_OK !== $file['error'] || ! is_uploaded_file( $file['tmp_name'] ) ) {
+      $fail( 500, 'bp_rest_attachments_member_avatar_no_image_file', 'Sorry, you need an image file to upload.' );
+    }
+    $info = getimagesize( $file['tmp_name'] );
+    if ( ! $info || $info[0] < 300 || $info[1] < 300 ) {
+      $fail( 400, 'bp_rest_attachments_member_avatar_error', 'You have selected an image that is smaller than recommended. For best results, upload a picture larger than 300 x 300 pixels.' );
+    }
+    $url = 'data:' . $info['mime'] . ';base64,' . base64_encode( (string) file_get_contents( $file['tmp_name'] ) );
+    echo json_encode( array( 'full' => $url, 'thumb' => $url, 'received' => array( 'width' => $info[0], 'height' => $info[1], 'mime' => $info['mime'], 'bytes' => (int) $file['size'], 'name' => $file['name'], 'action' => $_POST['action'] ?? '' ) ) );
+    exit;
+  }
+  if ( 'DELETE' === $method ) {
+    echo json_encode( array( 'deleted' => true, 'previous' => array( 'full' => '', 'thumb' => '' ) ) );
+    exit;
+  }
+  echo json_encode( array( 'full' => $person( '#9aa3af' ), 'thumb' => $person( '#9aa3af' ) ) );
   exit;
 }
 
@@ -49,6 +99,9 @@ $block  = $pick( 'block', array( 'none', 'all' ), 'all' );
 $pol    = $pick( 'pol', array( 'none', 'notstarted', 'progress', 'done' ), 'progress' );
 $admin  = '1' === ( $_GET['admin'] ?? '0' );
 $photo  = '1' === ( $_GET['photo'] ?? '0' );
+$pop    = '0' !== ( $_GET['pop'] ?? '1' );
+$upl    = '0' !== ( $_GET['upl'] ?? '1' );
+$rest   = $pick( 'rest', array( 'ok', 'denied', 'fail', 'noroute' ), 'ok' );
 $NOW    = 1794700800; // Nov 20, 2026 (fixed so the preview is reproducible)
 
 // ---- WordPress stand-ins --------------------------------------------------------------------------------------
@@ -112,6 +165,16 @@ function bp_get_user_has_avatar( $id ) { global $photo; return $photo; }
 function bp_core_fetch_avatar( $args ) { return 'data:image/svg+xml;utf8,' . rawurlencode( "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='#c9a27a'/><circle cx='32' cy='25' r='12' fill='#6b4a2f'/><path d='M10 64c3-15 13-22 22-22s19 7 22 22z' fill='#6b4a2f'/></svg>" ); }
 function bp_members_get_user_url( $id ) { return '/tests/site/members/adebola/'; }
 function bp_core_delete_existing_avatar( $args ) { return true; }
+function bp_disable_avatar_uploads() { global $upl; return ! $upl; }
+function bp_core_avatar_full_width() { return 300; }
+function bp_core_avatar_full_height() { return 300; }
+function bp_core_avatar_original_max_width() { return 450; }
+function bp_rest_namespace() { return 'buddyboss'; }
+function bp_rest_version() { return 'v1'; }
+function rest_url( $path = '' ) { global $rest; return '/tests/render-redesign-preview.php?avatar_rest=' . $rest . '&path=' . rawurlencode( $path ); }
+if ( $pop ) {
+  final class BP_REST_Attachments_Member_Avatar_Endpoint {} // Presence only: the real class registers the route.
+}
 
 /** Stand-in for the admin plugin's packet calculator (read-only in the real plugin). */
 final class GHCA_Audit_Calculator {
@@ -252,8 +315,32 @@ if ( 'certificates' === $screen ) {
 </style>
 </head>
 <body data-odp-context="<?php echo esc_attr( GHCA_ODP_Bulletins::$context ); ?>">
-<header class="site-header">Site header (WordPress theme)</header>
+<header class="site-header" style="display:flex;align-items:center;justify-content:space-between">Site header (WordPress theme)<img class="avatar user-7-avatar avatar-32 photo" width="32" height="32" alt="" style="border-radius:50%;background:#555" src="<?php echo esc_attr( $photo ? bp_core_fetch_avatar( array() ) : 'data:image/svg+xml;utf8,' . rawurlencode( "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='#9aa3af'/></svg>" ) ); ?>"></header>
 <div class="entry-content"><?php echo $html; // phpcs:ignore ?></div>
 <script src="../assets/ecd-redesign.js"></script>
+<?php if ( in_array( $_GET['open'] ?? '', array( 'pick', 'crop', 'remove', 'error' ), true ) ) : ?>
+<script>
+// Screenshots: open the photo pop-up in a given state (a generated sample photo for crop / error).
+// After DOMContentLoaded, so the dashboard script has set up the pop-up (a click before that follows the link).
+document.addEventListener('DOMContentLoaded', function () {
+  var mode = <?php echo json_encode( (string) $_GET['open'] ); ?>;
+  document.querySelector('[data-ghca-ph-open]').click();
+  var layer = document.querySelector('[data-ghca-ph]');
+  if (mode === 'remove') { layer.querySelector('[data-ghca-ph-remove]').click(); return; }
+  if (mode === 'pick') return;
+  var c = document.createElement('canvas'); c.width = 1200; c.height = 900;
+  var x = c.getContext('2d'), g = x.createLinearGradient(0, 0, 0, 900);
+  g.addColorStop(0, '#9cc3d5'); g.addColorStop(1, '#e8d8c3'); x.fillStyle = g; x.fillRect(0, 0, 1200, 900);
+  x.fillStyle = '#6b4a2f'; x.beginPath(); x.arc(600, 360, 150, 0, 7); x.fill();
+  x.beginPath(); x.ellipse(600, 900, 330, 300, 0, 0, 7); x.fill();
+  c.toBlob(function (b) {
+    var input = layer.querySelector('[data-ghca-ph-file]'), dt = new DataTransfer();
+    dt.items.add(new File([b], 'me.png', { type: 'image/png' }));
+    input.files = dt.files; input.dispatchEvent(new Event('change', { bubbles: true }));
+    if (mode === 'error') setTimeout(function () { layer.querySelector('[data-ghca-ph-save]').click(); }, 300);
+  }, 'image/png');
+});
+</script>
+<?php endif; ?>
 </body>
 </html>

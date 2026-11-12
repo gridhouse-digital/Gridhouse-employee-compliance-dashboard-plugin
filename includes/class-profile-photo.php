@@ -4,9 +4,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Profile photo for the redesigned welcome card. The photo is the employee's BuddyBoss / BuddyPress avatar:
- * uploading, cropping and storing go through BuddyBoss's own change-avatar screen, so the same photo appears in
- * the header, the profile and member lists. This class keeps no avatar store of its own. It only:
+ * Profile photo for the redesigned welcome card. The photo is the employee's BuddyBoss / BuddyPress avatar, so
+ * the same photo appears in the header, the profile and member lists. Since 1.6.1 the welcome card's pop-up
+ * (GHCA_ECD_Redesign::photo_dialog_html, assets/ecd-redesign.js) saves through BuddyBoss's REST API. This class
+ * covers the fallback path through BuddyBoss's change-avatar screen (no REST API, or no JavaScript) and keeps no
+ * avatar store of its own. It only:
  *
  * - removes the employee's own photo through BuddyPress's API ("Remove photo"),
  * - shows a "Back to your dashboard" link on the change-avatar screen when the employee came from the dashboard,
