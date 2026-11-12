@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Gridhouse Employee Compliance Dashboard
  * Description: Employee compliance home dashboard shortcodes for LearnDash + Elementor.
- * Version: 1.4.5
+ * Version: 1.6.0
  * Author: Gridhouse Digital
  * Author URI: https://gridhouse.digital
  * Text Domain: ghca-ecd
@@ -30,7 +30,7 @@ final class GHCA_Employee_Compliance_Dashboard {
   const OPTION_DUE_DATE     = 'ghca_compliance_due_date';
   const OPTION_CACHE_TTL    = 'ghca_ecd_cache_ttl';
   const OPTION_START_GROUPS = 'ghca_ecd_start_group_ids';
-  const VERSION             = '1.4.5';
+  const VERSION             = '1.6.0';
   const CYCLE_DAYS       = 365;
   const NOTICE_DAYS      = 90;
 
@@ -43,6 +43,7 @@ final class GHCA_Employee_Compliance_Dashboard {
     GHCA_ECD_Data_Provider::init();
     GHCA_ECD_Shortcodes::init();
     GHCA_ECD_Cert_Packet::init();
+    GHCA_ECD_Profile_Photo::init();
 
     add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
     add_filter( 'body_class', array( __CLASS__, 'add_body_class' ) );
@@ -126,6 +127,29 @@ final class GHCA_Employee_Compliance_Dashboard {
       wp_add_inline_style( 'ghca-employee-dashboard', GHCA_Dashboard_Branding::get_inline_css() );
     }
 
+    // Opt-in redesign: the scoped design-system stylesheet and its behaviour
+    // script. With the redesign on, [employee_compliance_dashboard] and every
+    // legacy section shortcode render the new dashboard (once per page);
+    // dashboard.css stays loaded only for the login gate, the standalone
+    // [employee_certificate_packet] card and the packet progress modal.
+    // Versioned by file time as well as the plugin version, so a rebuilt file is never served from a stale
+    // browser, plugin or CDN cache under an unchanged ?ver=.
+    if ( GHCA_ECD_Redesign::is_enabled() ) {
+      wp_enqueue_style(
+        'ghca-employee-redesign',
+        plugin_dir_url( __FILE__ ) . 'assets/ecd-redesign.css',
+        array( 'ghca-employee-dashboard' ),
+        self::asset_version( 'assets/ecd-redesign.css' )
+      );
+      wp_enqueue_script(
+        'ghca-employee-redesign',
+        plugin_dir_url( __FILE__ ) . 'assets/ecd-redesign.js',
+        array(),
+        self::asset_version( 'assets/ecd-redesign.js' ),
+        true
+      );
+    }
+
     if ( GHCA_ECD_Cert_Packet::is_available() && is_user_logged_in() ) {
       wp_enqueue_script(
         'ghca-employee-dashboard',
@@ -150,6 +174,11 @@ final class GHCA_Employee_Compliance_Dashboard {
         )
       );
     }
+  }
+
+  private static function asset_version( string $relative ): string {
+    $mtime = @filemtime( plugin_dir_path( __FILE__ ) . $relative ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+    return self::VERSION . ( $mtime ? '-' . $mtime : '' );
   }
 
   /** @param array<int,string> $classes */
@@ -189,6 +218,7 @@ final class GHCA_Employee_Compliance_Dashboard {
       'employee_compliance_support',
       'employee_compliance_trio',
       'employee_compliance_dashboard',
+      'employee_certificates',
     );
 
     foreach ( $tags as $tag ) {
@@ -207,6 +237,8 @@ final class GHCA_Employee_Compliance_Dashboard {
 require_once __DIR__ . '/includes/class-settings.php';
 require_once __DIR__ . '/includes/class-data-provider.php';
 require_once __DIR__ . '/includes/class-shortcodes.php';
+require_once __DIR__ . '/includes/class-redesign.php';
+require_once __DIR__ . '/includes/class-profile-photo.php';
 require_once __DIR__ . '/includes/class-cert-packet.php';
 
 GHCA_Employee_Compliance_Dashboard::init();

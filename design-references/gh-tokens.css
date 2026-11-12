@@ -1,0 +1,223 @@
+/* ==========================================================================
+   Gridhouse Compliance — design tokens  (v2.1.0 — HOMS base)
+   One component set, re-skinned per client from 6 brand inputs.
+   Brand inputs  → --gh-brand-*   (set by the PHP settings page)
+   Derived scales → --gh-primary-50…900, --gh-accent-50…900, --gh-neutral-25…900
+   Semantic roles → --gh-color-*, --gh-surface-*, --gh-text-*, --gh-border-*
+   Status colours  → --gh-status-*  (FIXED — never derived from brand)
+   Derivation: OKLCH. Fixed lightness ladder per step, chroma tapered at the
+   ends, hue = brand hue; the step nearest the brand lightness is replaced by
+   the exact brand hex. Text-on-colour = whichever of #FFFFFF / #141414 has the
+   higher contrast; if the brand fails 4.5:1 with both, the action colour moves
+   one step darker until it passes. See tokens.json → $derivation.
+   ========================================================================== */
+
+/* ---------- Theme: Gridhouse default (also :root fallback) ---------- */
+:root,
+[data-theme="gridhouse"] {
+  --gh-brand-primary: #1F3B57;
+  --gh-brand-accent: #2B7A78;
+  --gh-brand-surface: #F7F9FB;
+  --gh-org-name: "Gridhouse Compliance";
+
+  --gh-primary-50: #F3F7FC; --gh-primary-100: #E6EEF6; --gh-primary-200: #CDDBEA;
+  --gh-primary-300: #AAC0D8; --gh-primary-400: #87A3C0; --gh-primary-500: #6988A8;
+  --gh-primary-600: #516F8E; --gh-primary-700: #3C5874; --gh-primary-800: #1F3B57;
+  --gh-primary-900: #1A2D40;
+
+  --gh-accent-50: #F0F9F8; --gh-accent-100: #E1F1F0; --gh-accent-200: #C2E0DF;
+  --gh-accent-300: #98C9C7; --gh-accent-400: #6DADAB; --gh-accent-500: #479391;
+  --gh-accent-600: #2B7A78; --gh-accent-700: #126260; --gh-accent-800: #004A49;
+  --gh-accent-900: #003332;
+
+  --gh-neutral-25: #F7F9FB; --gh-neutral-50: #F0F3F7; --gh-neutral-100: #E0E7EE;
+  --gh-neutral-200: #CED5DC; --gh-neutral-300: #B2B8BF; --gh-neutral-400: #878D93;
+  --gh-neutral-500: #6A6F76; --gh-neutral-600: #50565C; --gh-neutral-700: #383E43;
+  --gh-neutral-800: #22272C; --gh-neutral-900: #12171B;
+
+  --gh-color-primary: #1F3B57;          /* action colour, AA with on-primary */
+  --gh-color-on-primary: #FFFFFF;        /* 11.5:1 */
+  --gh-color-primary-hover: #1A2D40;
+  --gh-color-primary-active: #12202E;
+  --gh-color-accent: #2B7A78;
+  --gh-color-on-accent: #FFFFFF;         /* 5.05:1 */
+  --gh-color-accent-text: #126260;       /* accent used as text on light surfaces */
+
+  --gh-font-heading: "Public Sans", system-ui, sans-serif;
+  --gh-heading-weight: 650;
+  --gh-heading-tracking: -0.01em;
+}
+
+/* ---------- Theme: Akansoh Health Services ---------- */
+[data-theme="akansoh"] {
+  --gh-brand-primary: #1B4B3B;
+  --gh-brand-accent: #C5964E;
+  --gh-brand-surface: #FBF7F1;
+  --gh-org-name: "Akansoh Health Services";
+
+  --gh-primary-50: #F2F8F6; --gh-primary-100: #E5F0EB; --gh-primary-200: #CADFD6;
+  --gh-primary-300: #A6C7B9; --gh-primary-400: #81AB9A; --gh-primary-500: #61907E;
+  --gh-primary-600: #487765; --gh-primary-700: #335F4F; --gh-primary-800: #1B4B3B;
+  --gh-primary-900: #133227;
+
+  --gh-accent-50: #FCF6EE; --gh-accent-100: #F6EBDC; --gh-accent-200: #EAD6B9;
+  --gh-accent-300: #D9B88A; --gh-accent-400: #C5964E; --gh-accent-500: #A97B31;
+  --gh-accent-600: #8E6210; --gh-accent-700: #734D00; --gh-accent-800: #573900;
+  --gh-accent-900: #3D2600;
+
+  --gh-neutral-25: #FBF7F1; --gh-neutral-50: #F8F3EB; --gh-neutral-100: #EBE5DE;
+  --gh-neutral-200: #D9D3CC; --gh-neutral-300: #BCB7AF; --gh-neutral-400: #908B84;
+  --gh-neutral-500: #736E67; --gh-neutral-600: #59554E; --gh-neutral-700: #413C36;
+  --gh-neutral-800: #2A2620; --gh-neutral-900: #191510;
+
+  --gh-color-primary: #1B4B3B;           /* 9.9:1 with white */
+  --gh-color-on-primary: #FFFFFF;
+  --gh-color-primary-hover: #133227;
+  --gh-color-primary-active: #0C241C;
+  --gh-color-accent: #C5964E;
+  --gh-color-on-accent: #141414;         /* 6.9:1 — white would fail (2.7:1) */
+  --gh-color-accent-text: #734D00;
+
+  --gh-font-heading: "Newsreader", Georgia, serif;
+  --gh-heading-weight: 550;
+  --gh-heading-tracking: -0.005em;
+}
+
+/* ---------- Theme: Purple-brand agency (stress test) ---------- */
+[data-theme="purple"] {
+  --gh-brand-primary: #5B2A86;
+  --gh-brand-accent: #2A9D8F;
+  --gh-brand-surface: #FAF8FC;
+  --gh-org-name: "Northbrook Community Care";
+
+  --gh-primary-50: #F9F4FF; --gh-primary-100: #F2E8FF; --gh-primary-200: #E2CFFB;
+  --gh-primary-300: #CDADF2; --gh-primary-400: #B38AE1; --gh-primary-500: #9A6ACB;
+  --gh-primary-600: #8051AF; --gh-primary-700: #683B93; --gh-primary-800: #5B2A86;
+  --gh-primary-900: #381855;
+
+  --gh-accent-50: #EEFAF7; --gh-accent-100: #DDF2EE; --gh-accent-200: #BBE3DC;
+  --gh-accent-300: #8BCDC2; --gh-accent-400: #58B2A5; --gh-accent-500: #2A9D8F;
+  --gh-accent-600: #007D71; --gh-accent-700: #006359; --gh-accent-800: #004B43;
+  --gh-accent-900: #00342E;
+
+  --gh-neutral-25: #FAF8FC; --gh-neutral-50: #F5F2FA; --gh-neutral-100: #E8E4ED;
+  --gh-neutral-200: #D6D2DB; --gh-neutral-300: #B9B6BE; --gh-neutral-400: #8E8A92;
+  --gh-neutral-500: #706D74; --gh-neutral-600: #57545B; --gh-neutral-700: #3E3C42;
+  --gh-neutral-800: #28252B; --gh-neutral-900: #17151A;
+
+  --gh-color-primary: #5B2A86;           /* 9.9:1 with white */
+  --gh-color-on-primary: #FFFFFF;
+  --gh-color-primary-hover: #381855;
+  --gh-color-primary-active: #2A1041;
+  --gh-color-accent: #2A9D8F;
+  --gh-color-on-accent: #141414;         /* 5.5:1 — white would fail (3.3:1) */
+  --gh-color-accent-text: #006359;
+
+  --gh-font-heading: "Plus Jakarta Sans", system-ui, sans-serif;
+  --gh-heading-weight: 650;
+  --gh-heading-tracking: -0.015em;
+}
+
+/* ---------- Semantic roles (shared; resolve against the active theme) ---------- */
+:root, [data-theme] {
+  --gh-surface-page: var(--gh-neutral-25);
+  --gh-surface-card: #FFFFFF;
+  --gh-surface-sunken: var(--gh-neutral-50);
+  --gh-surface-hover: var(--gh-neutral-50);
+  --gh-surface-selected: var(--gh-primary-50);
+  --gh-surface-brand: var(--gh-color-primary);
+  --gh-surface-brand-subtle: var(--gh-primary-50);
+  --gh-surface-accent-subtle: var(--gh-accent-50);
+  --gh-scrim: rgba(20, 20, 20, 0.48);
+
+  --gh-text: var(--gh-neutral-900);
+  --gh-text-secondary: var(--gh-neutral-600);
+  --gh-text-muted: var(--gh-neutral-500);       /* ≥ 4.5:1 on card and page */
+  --gh-text-link: var(--gh-primary-700);
+  --gh-text-on-brand: var(--gh-color-on-primary);
+
+  --gh-border: var(--gh-neutral-100);            /* decorative dividers */
+  --gh-border-strong: var(--gh-neutral-200);
+  --gh-border-input: var(--gh-neutral-400);      /* ≥ 3:1 — WCAG 1.4.11 */
+  --gh-focus: var(--gh-primary-600);             /* ≥ 3:1 on white */
+  --gh-focus-ring: 0 0 0 2px #FFFFFF, 0 0 0 4px var(--gh-focus);
+
+  --gh-chart-1: var(--gh-primary-800);
+  --gh-chart-2: var(--gh-accent-400);
+  --gh-chart-3: var(--gh-primary-400);
+  --gh-chart-4: var(--gh-accent-700);
+  --gh-chart-5: var(--gh-neutral-400);
+
+  /* Status — FIXED across every client. Always paired with icon + label. */
+  --gh-status-success-bg: #E7F4EA; --gh-status-success-fg: #1D6B34; --gh-status-success-border: #A9D5B4; --gh-status-success-solid: #2E7D3E;
+  --gh-status-warning-bg: #FFF3DF; --gh-status-warning-fg: #8A4A00; --gh-status-warning-border: #F0C68A; --gh-status-warning-solid: #B25E09;
+  --gh-status-danger-bg:  #FCEBEA; --gh-status-danger-fg:  #A51D1D; --gh-status-danger-border:  #F0B7B3; --gh-status-danger-solid:  #C62828;
+  --gh-status-info-bg:    #E8F0FD; --gh-status-info-fg:    #1D4FAE; --gh-status-info-border:    #B5C9F2; --gh-status-info-solid:    #2C64D6;
+  --gh-status-neutral-bg: #F1F2F4; --gh-status-neutral-fg: #4A5160; --gh-status-neutral-border: #D4D8DE; --gh-status-neutral-solid: #6B7280;
+
+  /* Typography */
+  --gh-font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --gh-font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --gh-text-xs: 12px;  --gh-lh-xs: 16px;
+  --gh-text-sm: 14px;  --gh-lh-sm: 20px;
+  --gh-text-md: 16px;  --gh-lh-md: 24px;
+  --gh-text-lg: 18px;  --gh-lh-lg: 28px;
+  --gh-text-xl: 22px;  --gh-lh-xl: 28px;
+  --gh-text-2xl: 28px; --gh-lh-2xl: 34px;
+  --gh-text-3xl: 36px; --gh-lh-3xl: 42px;
+  --gh-text-4xl: 44px; --gh-lh-4xl: 50px;
+
+  /* Space (4-pt) */
+  --gh-space-1: 4px;  --gh-space-2: 8px;  --gh-space-3: 12px; --gh-space-4: 16px;
+  --gh-space-5: 20px; --gh-space-6: 24px; --gh-space-8: 32px; --gh-space-10: 40px;
+  --gh-space-12: 48px; --gh-space-16: 64px;
+
+  /* Radius */
+  --gh-radius-xs: 4px; --gh-radius-sm: 6px; --gh-radius-md: 10px;
+  --gh-radius-lg: 14px; --gh-radius-xl: 20px; --gh-radius-pill: 999px;
+
+  /* Elevation */
+  --gh-shadow-1: 0 1px 2px rgba(20,20,20,.06), 0 1px 1px rgba(20,20,20,.03);
+  --gh-shadow-2: 0 4px 14px rgba(20,20,20,.08), 0 1px 3px rgba(20,20,20,.05);
+  --gh-shadow-3: 0 18px 48px rgba(20,20,20,.20), 0 4px 12px rgba(20,20,20,.08);
+
+  /* Motion & size */
+  --gh-ease: cubic-bezier(.2,.7,.2,1);
+  --gh-dur: 160ms;
+  --gh-touch: 44px;
+  --gh-control-h: 40px;
+  --gh-control-h-lg: 48px;
+}
+
+/* ---------- v2.1 HOMS base (overrides the theme neutrals and fonts) ----------
+   Taken from the HOMS light theme: warm paper ground, cool blue-grey ink,
+   Wix Madefor Display / Text, 18px cards, 10px inner radius, flat surfaces.
+   Brand primary/accent and status colours are unchanged per client.
+   Contrast on paper #F3EFEA: muted #51555E 6.5:1, input border #71747D 4.1:1. */
+:root, [data-theme] {
+  --gh-neutral-25: #F3EFEA;  /* paper   oklch(95.5% .008 75) */
+  --gh-neutral-50: #EDE9E3;  /* paper-2 */
+  --gh-neutral-100: #D9D5CF; /* rule    oklch(87.5% .009 75) */
+  --gh-neutral-200: #CAC5BF;
+  --gh-neutral-300: #ABA7A1;
+  --gh-neutral-400: #71747D; /* input   */
+  --gh-neutral-500: #51555E; /* ink-3   oklch(45% .016 265) */
+  --gh-neutral-600: #31353F; /* ink-2   oklch(33% .018 266) */
+  --gh-neutral-700: #252932;
+  --gh-neutral-800: #1C1F27;
+  --gh-neutral-900: #151820; /* ink     oklch(21% .016 268) */
+
+  --gh-surface-hover: #E9E4DD; /* paper-3 */
+  --gh-text-secondary: var(--gh-neutral-600);
+  --gh-text-muted: var(--gh-neutral-500);
+
+  --gh-font-heading: "Wix Madefor Display", "Wix Madefor Text", system-ui, sans-serif;
+  --gh-font-body: "Wix Madefor Text", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --gh-heading-weight: 500;
+  --gh-heading-tracking: -0.022em;
+
+  --gh-radius-md: 10px;   /* inner */
+  --gh-radius-lg: 18px;   /* cards */
+  --gh-shadow-1: none;
+  --gh-shadow-2: 0 2px 8px rgba(21,24,32,.06);
+}

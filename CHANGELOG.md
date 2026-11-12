@@ -2,6 +2,91 @@
 
 All notable changes to the Gridhouse Employee Compliance Dashboard are documented here.
 
+## [1.6.0]
+
+Redesign fixes. Design system, fonts and colours unchanged. No change to the admin plugin's schema, roles,
+capabilities, rewrite rules or sending logic.
+
+### Changed
+
+- **Legacy section shortcodes** (login gate, notification, welcome, status cards, next required course,
+  required actions, announcements, quick links, support, trio) stay registered. With the redesign on, the first
+  dashboard shortcode on a page renders the full new dashboard and later ones render nothing, so it appears once.
+  Admins see "This page uses a legacy shortcode. Replace it with [employee_compliance_dashboard]."
+- **ODP bulletins** on the employee dashboard always use the employee audience (employee or both), for every
+  role, including admins viewing the page. Ticker, drawer and its count use the same set.
+- **Required actions:** every item can be completed. "Review company policies" is done when the employee
+  completes the policies LearnDash course (new setting; falls back to a course titled "Polic…", flagged to
+  admins; hidden when none). The policy page is a secondary "Read the policy" link and never counts.
+  "Contact admin" is removed (contact stays in the Support card).
+- **Per-course due dates:** Next up and Still to earn use each course's own due/expiry date (course lifespans),
+  falling back to the cycle or new-hire date. Overdue, Due soon (30 days) and Locked (LearnDash prerequisites
+  only) chips.
+- **Role badge** shows the job role and never bbPress forum roles (e.g. Keymaster); hidden when there is none.
+- **Tablet status strip:** Training status on its own row, the other four below (no orphan cell).
+- Course titles keep acronyms in capitals (IDD, ODP, CPR, …).
+
+### Added
+
+- **"What's blocking my packet" card** (below the status strip, above Quick links): plain-language reasons from
+  the admin plugin's packet calculation (`GHCA_Audit_Calculator::calculate_employee_audit_data`, read-only):
+  orientation not complete, ODP 6100 annual hours short (X of 24), missing required training topics, plus
+  expired certificates and completed courses with no certificate. Each links to the course to complete; outside
+  training goes through the Jotform step inside the course. "You're all set" when nothing blocks.
+- **Announcements empty state:** "No current announcements" with a muted megaphone, same card height.
+- **Profile photo:** the welcome avatar shows the BuddyBoss/BuddyPress photo, or initials from the real name
+  (never the username). Clicking it opens BuddyBoss's change-avatar screen (with a link back to the dashboard);
+  "Remove photo" deletes it through BuddyPress. Uploads started there are limited to JPG, PNG and WebP.
+- **ODP ticker on phones (≤719px):** row 1 label pill + pause + All bulletins, row 2 the headline at full
+  width; "Saved copy" becomes its clock icon with a label. The scroll speed is recalculated on resize and
+  orientation change. Reduced motion: no scrolling, the newest headline truncated, still a link.
+- New option `ghca_ecd_policies_course_id` (Settings → Employee Dashboard → Company policies course).
+
+### Fixed
+
+- The certificate-packet count loop ran twice and the snapshot key was set twice.
+- Starter announcements are seeded once: `add_option()` claims the seed atomically, so repeated or concurrent
+  loads cannot create duplicates.
+- The outside-certificate upload teaser (`ghca_employee_outside_certificate_url`) is removed.
+- The welcome avatar showed the first letter of the username ("M") instead of the person's initials.
+
+## [1.5.0]
+
+### Added
+
+- **Redesigned employee home and certificates screens (opt-in).** New setting
+  "Redesigned screens" (`ghca_ecd_ui_redesign`, off by default) switches
+  `[employee_compliance_dashboard]` to the Emp-Home board and the new
+  `[employee_certificates]` shortcode to the Emp-Certificates board, on the
+  shared gh-* design system used by the admin dashboard. Theme follows the admin
+  dashboard unless set here. The WordPress theme keeps the header and navigation.
+- `[employee_certificates]`: earned certificates (issued date, expiry, Download
+  PDF, View, the packet download) and certificates still to earn.
+- ODP bulletin ticker on the redesigned home when the admin plugin provides it.
+  Headlines open the **ODP bulletin side drawer** (ODP-Drawer-Employee board):
+  the admin plugin's own drawer markup and audience-filtered payload, with
+  newer/older stepping, source link, Escape to close and focus return.
+- **Certificate viewer** (Modal-CertViewer): "View" on a certificate opens a
+  modal with the PDF in the browser's viewer (page, zoom, fit, print, open in
+  new tab), certificate details and Download PDF. Phones get a full-screen
+  sheet. Same behaviour as the admin dashboard's viewer.
+
+### Changed
+
+- **Release note — new typeface on the redesigned screens:** Wix Madefor
+  Display and Text replace Plus Jakarta Sans, self-hosted (no Google Fonts
+  request). Employees will notice this more than the colour changes.
+- Snapshot courses now carry `completed_ts`; the cache key changes with the
+  version, so every snapshot rebuilds once.
+
+### Fixed
+
+- **Announcements respect the admin "Who sees it" setting.** Announcements
+  marked "Admins only" are no longer shown to employees, and group
+  announcements only to members of that LearnDash group. Announcements saved
+  before the setting existed stay visible to everyone. Applies to the previous
+  screens as well as the redesign.
+
 ## [1.4.4]
 
 ### Fixed (architecture-review findings)

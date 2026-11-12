@@ -1,0 +1,5 @@
+# Build output (installable ZIPs, BUILD.txt, review screenshots) and local tool config.
+/dist/
+/.claude/
+# Intermediate file of design-references/build-ecd-redesign.sh
+/design-references/.board.tmp.css

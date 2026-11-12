@@ -28,6 +28,7 @@ foreach ( array(
   'GHCA_ECD_Shortcodes',
   'GHCA_ECD_Settings',
   'GHCA_ECD_UI_Icons',
+  'GHCA_ECD_Redesign',
 ) as $class ) {
   check( "class {$class} exists", class_exists( $class ) );
 }
@@ -47,9 +48,10 @@ $expected = array(
   'employee_compliance_trio',
   'employee_compliance_dashboard',
   'employee_certificate_packet',
+  'employee_certificates',
 );
 
-check( '12 shortcodes registered', count( $GLOBALS['ghca_test_shortcodes'] ) === 12 );
+check( '13 shortcodes registered', count( $GLOBALS['ghca_test_shortcodes'] ) === 13 );
 
 foreach ( $expected as $tag ) {
   $cb = $GLOBALS['ghca_test_shortcodes'][ $tag ] ?? null;

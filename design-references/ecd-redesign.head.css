@@ -1,0 +1,32 @@
+/*
+ * Gridhouse redesign styles for the opt-in employee home and certificates
+ * screens. Built by design-references/build-ecd-redesign.sh; do not edit
+ * assets/ecd-redesign.css by hand.
+ *
+ * The middle section is the design canvas CSS (gh-tokens.css v2.1 HOMS base +
+ * gh-components.css v2.4.x + the gh-app.css app layer), scoped by
+ * design-references/scope-board-css.py. Every selector starts with
+ * :is(.ghca-ecd-ui, #ghca-ecd-ui-scope): it matches the .ghca-ecd-ui wrapper
+ * but counts as an id, so host theme rules (BuddyBoss, Elementor kits, block
+ * themes) cannot override fonts, colours, spacing or radii. The id is never
+ * rendered.
+ *
+ * Fonts: Wix Madefor Display and Wix Madefor Text, latin and latin-ext subsets,
+ * from Google Fonts, SIL Open Font License 1.1 (fonts/wix-madefor/OFL.txt).
+ * Icons: Phosphor Icons, MIT, inlined as data URIs by the component CSS.
+ */
+
+@font-face { font-family: 'Wix Madefor Display'; font-style: normal; font-weight: 400 800; font-display: swap; src: url('fonts/wix-madefor/wix-madefor-display-latin-ext.woff2') format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: 'Wix Madefor Display'; font-style: normal; font-weight: 400 800; font-display: swap; src: url('fonts/wix-madefor/wix-madefor-display-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Wix Madefor Text'; font-style: normal; font-weight: 400 800; font-display: swap; src: url('fonts/wix-madefor/wix-madefor-text-latin-ext.woff2') format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: 'Wix Madefor Text'; font-style: normal; font-weight: 400 800; font-display: swap; src: url('fonts/wix-madefor/wix-madefor-text-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+
+/* Host-theme reset. Zero added specificity, so every design rule below wins over it. */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) { display: block; margin: 0; padding: 0; border: 0; background: none; box-shadow: none; max-width: none; float: none; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app :where(h1, h2, h3, h4, h5, h6, p, ul, ol, li, dl, dt, dd, figure, blockquote, table, th, td, form, fieldset, legend, label, nav, section, article, aside, header, footer, main, div, span, a, strong, b, em, small, time, i, button, input, select, textarea) { margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; text-shadow: none; text-transform: none; text-decoration: none; letter-spacing: inherit; word-spacing: normal; font-family: inherit; font-size: inherit; font-style: inherit; line-height: inherit; color: inherit; text-align: inherit; float: none; min-height: auto; min-width: auto; max-width: none; outline: 0; transition: none; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app :where(h1, h2, h3, h4, h5, h6) { font-weight: inherit; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app :where(button, input, select, textarea) { -webkit-appearance: none; appearance: none; font-weight: inherit; width: auto; height: auto; cursor: auto; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app :where(button) { cursor: pointer; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app :where(svg) { display: inline-block; max-width: none; }
+
+/* Design canvas CSS (scoped). */

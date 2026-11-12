@@ -22,6 +22,47 @@ Employee-facing home dashboard for LearnDash compliance training, built for Elem
 | `[employee_compliance_quick_links]` | Quick link cards |
 | `[employee_compliance_support]` | Support contact box |
 | `[employee_certificate_packet]` | "Download my certificate packet" card (requires the admin plugin; hidden until the first certificate is earned) |
+| `[employee_certificates]` | My certificates page: earned certificates and those still to earn (redesigned screen; the packet card when the redesign is off). Put it on `/cert-download/`. |
+
+## Redesigned screens (opt-in, v1.5.0)
+
+Settings → Employee Dashboard → **Redesigned screens** switches
+`[employee_compliance_dashboard]` and `[employee_certificates]` to the
+"Gridhouse Compliance — Phase 2 Dashboards" boards (Emp-Home,
+Emp-Certificates and their phone versions). Off by default; uncheck to roll
+back. `[employee_compliance_dashboard]` is the one standard shortcode. The
+older section shortcodes stay registered and, with the redesign on, show the
+full new dashboard once per page; admins see a note asking to replace them.
+
+- **Header and navigation** come from the WordPress theme. The boards' app bar
+  and phone tab bar are not rendered. Handbook and Policies stay WordPress
+  pages (quick links point to them through the existing filters).
+- **Width** matches the admin compliance dashboard: full-bleed, content up to
+  1480px. `ghca_ecd_ui_full_bleed` returning false keeps it inside the theme column.
+- **Theme**: Gridhouse, Akansoh or Purple, or "Same as the admin dashboard"
+  (default), which follows the admin plugin's redesign theme. Agency colours
+  from the admin Branding settings are applied through the admin plugin's own
+  helper, so both dashboards match.
+- **Fonts** change from Plus Jakarta Sans to Wix Madefor Display and Text,
+  self-hosted (SIL OFL 1.1, `assets/fonts/wix-madefor/OFL.txt`).
+- **ODP bulletin ticker** shows when the admin plugin provides
+  `GHCA_ODP_Bulletins`; headlines open the side drawer. It always uses the
+  employee audience, for every role. This plugin registers no bulletin routes.
+- **What's blocking my packet** reads the admin plugin's packet calculation
+  (`GHCA_Audit_Calculator`, read-only). Nothing is written from this card.
+- **Required actions** are all completable. Choose the company policies course
+  in Settings → Employee Dashboard (`ghca_ecd_policies_course_id`).
+- **Profile photo** is the BuddyBoss avatar; changing it uses BuddyBoss's own
+  change-avatar screen. Photos never go into certificates or packets.
+- **CSS** is built, not hand-edited: `sh design-references/build-ecd-redesign.sh`
+  scopes the canvas CSS under `.ghca-ecd-ui` and writes `assets/ecd-redesign.css`.
+- **Preview without WordPress**: `php -S 127.0.0.1:8765 -t .` then open
+  `/tests/render-redesign-preview.php` (switches for every test case are listed at the top of that file;
+  `tests/frame.html?w=390&q=…` shows it at an exact width).
+
+Filters: `ghca_ecd_ui_redesign`, `ghca_ecd_ui_theme`, `ghca_ecd_ui_full_bleed`,
+`ghca_employee_role_label` (the role badge under the welcome; defaults to the employee's job role,
+skipping generic and bbPress forum roles), `ghca_employee_certificates_url`, `ghca_ecd_title_acronyms`.
 
 ## Access
 

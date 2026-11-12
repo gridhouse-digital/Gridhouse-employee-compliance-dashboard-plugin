@@ -16,6 +16,9 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 delete_option( 'ghca_ecd_cache_ttl' );
 delete_option( 'ghca_ecd_start_group_ids' );
 delete_option( 'ghca_announcements_seeded' );
+delete_option( 'ghca_ecd_ui_redesign' );
+delete_option( 'ghca_ecd_ui_theme' );
+delete_option( 'ghca_ecd_policies_course_id' );
 
 global $wpdb;
 

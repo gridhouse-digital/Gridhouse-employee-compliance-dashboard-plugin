@@ -196,21 +196,17 @@ final class GHCA_ECD_Data_Provider {
       }
     }
 
-    // Certificates eligible for the self-service packet, measured against the
-    // full enrolled list (not the new-hire subset). Stored in the snapshot so
-    // cached page loads can show/hide the packet button without re-running
-    // the LearnDash course loop.
-    $packet_certs = 0;
-    foreach ( self::get_required_courses( $user_id ) as $packet_course ) {
-      if ( ! empty( $packet_course['completed'] ) && '' !== self::get_certificate_url( $user_id, (int) $packet_course['id'] ) ) {
-        ++$packet_certs;
-      }
-    }
+    // The single cycle / new-hire due date, as a timestamp: the fallback for courses with no due date of their own.
+    $due_ts = ( ! empty( $new_hire['active'] ) && empty( $new_hire['complete'] ) && ! empty( $new_hire['deadline_ts'] ) )
+      ? (int) $new_hire['deadline_ts']
+      : ( ! empty( $cycle['due_timestamp'] ) ? (int) $cycle['due_timestamp'] : (int) strtotime( (string) $due_raw ) );
 
     self::$snapshot = array(
       'user_id'                   => $user_id,
       'packet_certificate_count'  => $packet_certs,
-      'packet_certificate_count'  => $packet_certs,
+      'due_ts'                    => $due_ts,
+      'policies'                  => self::policies_status( $user_id ),
+      'last_name'                 => get_user_meta( $user_id, 'last_name', true ),
       'first_name'                => get_user_meta( $user_id, 'first_name', true ),
       'display_name'              => $user ? $user->display_name : '',
       'courses'                   => $courses,
@@ -226,6 +222,7 @@ final class GHCA_ECD_Data_Provider {
       'certificate_url'           => $certificate_url,
       'certificate_status_label'  => $all_complete ? __( 'Check certificates page', 'ghca-ecd' ) : __( 'Available after completion', 'ghca-ecd' ),
       'next_course'               => $next_course ? array(
+        'id'             => (int) $next_course['id'],
         'title'          => $next_course['title'],
         'description'    => $next_course['description'] ?? '',
         'progress'       => (int) ( $next_course['progress'] ?? 0 ),
@@ -304,6 +301,8 @@ final class GHCA_ECD_Data_Provider {
         'description'    => self::get_course_description( $course_id ),
         'status'         => $status,
         'completed'      => $completed,
+        'completed_ts'   => $completed_ts,
+        'locked'         => ! $completed && self::prerequisites_lock( $course_id, $user_id ),
         'compliance_state' => $compliance_state,
         'lifespan_days'  => $lifespan_days,
         'expiration_ts'  => $expiration_ts,
@@ -441,6 +440,57 @@ final class GHCA_ECD_Data_Provider {
     }
 
     return '';
+  }
+
+  /** True only when LearnDash prerequisites are enabled for the course and not yet met by this user. */
+  public static function prerequisites_lock( int $course_id, int $user_id ): bool {
+    if ( ! function_exists( 'learndash_get_course_prerequisite_enabled' ) || ! learndash_get_course_prerequisite_enabled( $course_id ) ) {
+      return false;
+    }
+    if ( function_exists( 'learndash_is_course_prerequities_completed' ) ) { // LearnDash's own spelling.
+      return ! learndash_is_course_prerequities_completed( $course_id, $user_id );
+    }
+    return false;
+  }
+
+  /**
+   * The company policies course and this user's progress in it. Read-only.
+   * Viewing the separate policy page never counts as completion.
+   *
+   * @return array{course_id:int,source:string,url:string,completed:bool,progress:int,title:string}
+   */
+  public static function policies_status( int $user_id ): array {
+    $resolved = GHCA_ECD_Settings::resolve_policies_course();
+    $id       = (int) $resolved['course_id'];
+    $out      = array( 'course_id' => $id, 'source' => (string) $resolved['source'], 'url' => '', 'completed' => false, 'progress' => 0, 'title' => '' );
+    if ( $id <= 0 ) {
+      return $out;
+    }
+    $out['url']       = (string) ( get_permalink( $id ) ?: '' );
+    $out['title']     = html_entity_decode( (string) get_the_title( $id ), ENT_QUOTES, 'UTF-8' );
+    $out['completed'] = function_exists( 'learndash_course_completed' ) && (bool) learndash_course_completed( $user_id, $id );
+    if ( function_exists( 'learndash_course_progress' ) ) {
+      $progress        = (array) learndash_course_progress( array( 'user_id' => $user_id, 'course_id' => $id, 'array' => true ) );
+      $out['progress'] = (int) ( $progress['percentage'] ?? 0 );
+    }
+    if ( $out['completed'] ) {
+      $out['progress'] = 100;
+    }
+    return $out;
+  }
+
+  /**
+   * Whether finishing the course awards a certificate. Without LearnDash's
+   * settings API the answer is assumed yes, so no course silently disappears.
+   */
+  public static function course_has_certificate( int $course_id ): bool {
+    if ( $course_id <= 0 ) {
+      return false;
+    }
+    if ( ! function_exists( 'learndash_get_setting' ) ) {
+      return true;
+    }
+    return (int) learndash_get_setting( $course_id, 'certificate' ) > 0;
   }
 
   /** @return array<string,mixed> */

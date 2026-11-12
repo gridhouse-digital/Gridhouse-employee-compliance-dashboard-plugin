@@ -28,6 +28,7 @@ final class GHCA_ECD_Shortcodes {
       'employee_compliance_trio'          => 'render_trio',
       'employee_compliance_dashboard'     => 'render_full_dashboard',
       'employee_certificate_packet'       => 'render_certificate_packet',
+      'employee_certificates'             => 'render_certificates',
     );
 
     foreach ( $map as $tag => $method ) {
@@ -35,7 +36,59 @@ final class GHCA_ECD_Shortcodes {
     }
   }
 
+  /** Legacy section shortcodes that render the full new dashboard when the redesign is on. */
+  const LEGACY_SECTIONS = array(
+    'employee_compliance_login_gate',
+    'employee_compliance_notification',
+    'employee_compliance_welcome',
+    'employee_compliance_status_cards',
+    'employee_next_required_course',
+    'employee_required_actions',
+    'employee_compliance_announcements',
+    'employee_compliance_quick_links',
+    'employee_compliance_support',
+    'employee_compliance_trio',
+  );
+
+  /** @var bool The new dashboard has been output on this page (it renders once per page). */
+  private static $home_rendered = false;
+
+  /** @var bool The admin legacy-shortcode note has been output on this page. */
+  private static $legacy_noted = false;
+
+  /**
+   * With the redesign on, every dashboard shortcode routes here: the first one on the page outputs the whole new
+   * dashboard and later ones output nothing (admins see a one-time note for legacy shortcodes). Logged-out
+   * visitors get the login gate once.
+   */
+  public static function redesign_once( string $tag ): string {
+    $legacy = in_array( $tag, self::LEGACY_SECTIONS, true );
+    $note   = '';
+    if ( $legacy && ! self::$legacy_noted && is_user_logged_in() && current_user_can( 'manage_options' ) ) {
+      self::$legacy_noted = true;
+      $note = GHCA_ECD_Redesign::legacy_notice_html();
+    }
+    if ( self::$home_rendered ) {
+      return $note;
+    }
+    self::$home_rendered = true;
+    if ( ! self::can_view_dashboard() ) {
+      return self::legacy_login_gate();
+    }
+    return $note . GHCA_ECD_Redesign::render_home();
+  }
+
+  /** Test helper: forget what this request has rendered. */
+  public static function reset_render_state(): void {
+    self::$home_rendered = false;
+    self::$legacy_noted  = false;
+  }
+
   public static function render_full_dashboard( $atts = array() ): string {
+    if ( GHCA_ECD_Redesign::is_enabled() ) {
+      return self::redesign_once( 'employee_compliance_dashboard' );
+    }
+
     return self::render_login_gate( $atts )
       . self::render_compliance_notification( $atts )
       . self::render_welcome( $atts )
@@ -46,6 +99,14 @@ final class GHCA_ECD_Shortcodes {
   }
 
   public static function render_login_gate( $atts = array() ): string {
+    if ( GHCA_ECD_Redesign::is_enabled() ) {
+      return self::redesign_once( 'employee_compliance_login_gate' );
+    }
+    return self::legacy_login_gate();
+  }
+
+  /** The login gate markup (pre-1.5 look; used by both designs for logged-out visitors). */
+  public static function legacy_login_gate(): string {
     if ( is_user_logged_in() ) {
       return '';
     }
@@ -65,6 +126,10 @@ final class GHCA_ECD_Shortcodes {
   }
 
   public static function render_compliance_notification( $atts = array() ): string {
+    if ( GHCA_ECD_Redesign::is_enabled() ) {
+      return self::redesign_once( 'employee_compliance_notification' );
+    }
+
     if ( ! self::can_view_dashboard() ) {
       return '';
     }
@@ -101,6 +166,10 @@ final class GHCA_ECD_Shortcodes {
   }
 
   public static function render_welcome( $atts = array() ): string {
+    if ( GHCA_ECD_Redesign::is_enabled() ) {
+      return self::redesign_once( 'employee_compliance_welcome' );
+    }
+
     if ( ! self::can_view_dashboard() ) {
       return '';
     }
@@ -156,6 +225,10 @@ final class GHCA_ECD_Shortcodes {
   }
 
   public static function render_status_cards( $atts = array() ): string {
+    if ( GHCA_ECD_Redesign::is_enabled() ) {
+      return self::redesign_once( 'employee_compliance_status_cards' );
+    }
+
     if ( ! self::can_view_dashboard() ) {
       return '';
     }
@@ -325,6 +398,10 @@ final class GHCA_ECD_Shortcodes {
   }
 
   public static function render_trio( $atts = array() ): string {
+    if ( GHCA_ECD_Redesign::is_enabled() ) {
+      return self::redesign_once( 'employee_compliance_trio' );
+    }
+
     if ( ! self::can_view_dashboard() ) {
       return '';
     }
@@ -337,6 +414,10 @@ final class GHCA_ECD_Shortcodes {
   }
 
   public static function render_next_course( $atts = array() ): string {
+    if ( GHCA_ECD_Redesign::is_enabled() ) {
+      return self::redesign_once( 'employee_next_required_course' );
+    }
+
     if ( ! self::can_view_dashboard() ) {
       return '';
     }
@@ -392,6 +473,10 @@ final class GHCA_ECD_Shortcodes {
   }
 
   public static function render_required_actions( $atts = array() ): string {
+    if ( GHCA_ECD_Redesign::is_enabled() ) {
+      return self::redesign_once( 'employee_required_actions' );
+    }
+
     if ( ! self::can_view_dashboard() ) {
       return '';
     }
@@ -430,11 +515,15 @@ final class GHCA_ECD_Shortcodes {
   }
 
   public static function render_announcements( $atts = array() ): string {
+    if ( GHCA_ECD_Redesign::is_enabled() ) {
+      return self::redesign_once( 'employee_compliance_announcements' );
+    }
+
     if ( ! self::can_view_dashboard() ) {
       return '';
     }
 
-    $items = self::get_announcement_items();
+    $items = self::get_announcement_items( true );
 
     ob_start();
     ?>
@@ -477,14 +566,74 @@ final class GHCA_ECD_Shortcodes {
     return (string) ob_get_clean();
   }
 
-  /** @return array<int,array{title:string,meta?:string,tone:string,icon:string,url?:string}> */
-  private static function get_announcement_items(): array {
+  /**
+   * Whether an announcement's stored audience includes employees. The admin
+   * plugin stores `ghca_announce_audience` (all, admins or group) and, for
+   * group announcements, `ghca_announce_group`. Announcements saved before
+   * that setting existed have no audience and stay visible to everyone.
+   *
+   * @param array<int> $user_group_ids LearnDash groups the viewer belongs to.
+   */
+  public static function announcement_visible_to_employee( string $audience, int $group_id, array $user_group_ids ): bool {
+    if ( '' === $audience || 'all' === $audience ) {
+      return true;
+    }
+    if ( 'group' === $audience ) {
+      return $group_id > 0 && in_array( $group_id, array_map( 'intval', $user_group_ids ), true );
+    }
+    // "admins" and any value this plugin does not know: never shown to employees.
+    return false;
+  }
+
+  /** @return array<int> */
+  private static function current_user_group_ids(): array {
+    if ( ! function_exists( 'learndash_get_users_group_ids' ) ) {
+      return array();
+    }
+    return array_values( array_filter( array_map( 'intval', (array) learndash_get_users_group_ids( get_current_user_id() ) ) ) );
+  }
+
+  /**
+   * Latest announcements this employee may see.
+   *
+   * @param bool $with_samples Fall back to the built-in sample reminders when there are none (legacy screens only).
+   * @return array<int,array{title:string,meta?:string,tone:string,icon:string,type:string,date:string,url?:string}>
+   */
+  public static function get_announcement_items( bool $with_samples = true ): array {
     $presets = array(
       array( 'tone' => 'warning', 'icon' => 'alert' ),
       array( 'tone' => 'success', 'icon' => 'status' ),
       array( 'tone' => 'info', 'icon' => 'bell' ),
       array( 'tone' => 'neutral', 'icon' => 'document' ),
     );
+
+    $groups   = self::current_user_group_ids();
+    $audience = array(
+      'relation' => 'OR',
+      array(
+        'key'     => 'ghca_announce_audience',
+        'compare' => 'NOT EXISTS',
+      ),
+      array(
+        'key'     => 'ghca_announce_audience',
+        'value'   => array( 'all', '' ),
+        'compare' => 'IN',
+      ),
+    );
+    if ( $groups ) {
+      $audience[] = array(
+        'relation' => 'AND',
+        array(
+          'key'   => 'ghca_announce_audience',
+          'value' => 'group',
+        ),
+        array(
+          'key'     => 'ghca_announce_group',
+          'value'   => $groups,
+          'compare' => 'IN',
+        ),
+      );
+    }
 
     $posts = get_posts(
       array(
@@ -494,8 +643,22 @@ final class GHCA_ECD_Shortcodes {
         'orderby'                => 'date',
         'order'                  => 'DESC',
         'no_found_rows'          => true,
-        'update_post_meta_cache' => false,
+        'meta_query'             => $audience, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
         'update_post_term_cache' => false,
+      )
+    );
+
+    // Defence in depth: the same rule again on each row, in case a filter rewrote the query.
+    $posts = array_values(
+      array_filter(
+        (array) $posts,
+        static function ( $post ) use ( $groups ): bool {
+          return self::announcement_visible_to_employee(
+            (string) get_post_meta( $post->ID, 'ghca_announce_audience', true ),
+            (int) get_post_meta( $post->ID, 'ghca_announce_group', true ),
+            $groups
+          );
+        }
       )
     );
 
@@ -530,6 +693,8 @@ final class GHCA_ECD_Shortcodes {
           'meta'  => $body !== '' ? wp_trim_words( $body, 16, '…' ) : '',
           'tone'  => $preset['tone'],
           'icon'  => $preset['icon'],
+          'type'  => isset( $type_map[ $type ] ) ? $type : 'update',
+          'date'  => (string) get_the_date( 'M j', $post ),
         );
 
         // The action link the admin attached in the announcements manager.
@@ -546,6 +711,10 @@ final class GHCA_ECD_Shortcodes {
       if ( ! empty( $items ) ) {
         return apply_filters( 'ghca_employee_announcements_items', $items );
       }
+    }
+
+    if ( ! $with_samples ) {
+      return apply_filters( 'ghca_employee_announcements_items', array() );
     }
 
     return apply_filters(
@@ -579,9 +748,17 @@ final class GHCA_ECD_Shortcodes {
     );
   }
 
+  /**
+   * One-time seed of the starter announcements. add_option() is the lock: it inserts the flag row only if it does
+   * not exist yet (the options table's unique key), so concurrent or repeated page loads cannot seed twice.
+   * Nothing is claimed until the announcement post type exists (the admin plugin registers it).
+   */
   public static function maybe_seed_announcements(): void {
     if ( get_option( 'ghca_announcements_seeded' ) || ! post_type_exists( 'ghca-announce' ) ) {
       return;
+    }
+    if ( ! add_option( 'ghca_announcements_seeded', 1, '', false ) ) {
+      return; // Another request claimed the seed first.
     }
 
     $defaults = array(
@@ -605,11 +782,13 @@ final class GHCA_ECD_Shortcodes {
         )
       );
     }
-
-    update_option( 'ghca_announcements_seeded', 1, false );
   }
 
   public static function render_quick_links( $atts = array() ): string {
+    if ( GHCA_ECD_Redesign::is_enabled() ) {
+      return self::redesign_once( 'employee_compliance_quick_links' );
+    }
+
     if ( ! self::can_view_dashboard() ) {
       return '';
     }
@@ -644,6 +823,10 @@ final class GHCA_ECD_Shortcodes {
   }
 
   public static function render_support( $atts = array() ): string {
+    if ( GHCA_ECD_Redesign::is_enabled() ) {
+      return self::redesign_once( 'employee_compliance_support' );
+    }
+
     if ( ! self::can_view_dashboard() ) {
       return '';
     }
@@ -697,62 +880,65 @@ final class GHCA_ECD_Shortcodes {
     return (string) ob_get_clean();
   }
 
-  /** @return array<int,array{label:string,done:bool}> */
-  private static function build_action_items( array $data ): array {
-    if ( ! empty( $data['new_hire']['active'] ) && empty( $data['new_hire']['complete'] ) ) {
-      return array(
-        array(
-          'label' => sprintf(
-            __( 'Complete all new hire courses within %d days', 'ghca-ecd' ),
-            (int) ( $data['new_hire']['deadline_days'] ?? 30 )
-          ),
-          'done'  => ! empty( $data['all_complete'] ),
-        ),
-        array(
-          'label' => __( 'Pass required new hire quizzes', 'ghca-ecd' ),
-          'done'  => ! empty( $data['all_complete'] ),
-        ),
-        array(
-          'label' => __( 'Review company policies', 'ghca-ecd' ),
-          'done'  => false,
-        ),
-        array(
-          'label' => __( 'Download certificate if needed', 'ghca-ecd' ),
-          'done'  => ! empty( $data['certificate_url'] ),
-        ),
-        array(
-          'label' => __( 'Contact admin if something looks wrong', 'ghca-ecd' ),
-          'done'  => false,
-        ),
+  /**
+   * Certificates screen. With the redesign on it renders the Emp-Certificates
+   * board; otherwise the existing certificate packet card.
+   */
+  public static function render_certificates( $atts = array() ): string {
+    if ( ! self::can_view_dashboard() ) {
+      return self::legacy_login_gate();
+    }
+    if ( GHCA_ECD_Redesign::is_enabled() ) {
+      return GHCA_ECD_Redesign::render_certificates();
+    }
+    return self::render_certificate_packet( $atts );
+  }
+
+  /**
+   * Required actions. Every item can be ticked off by the employee: course and quiz completion come from LearnDash,
+   * "Review company policies" from completing the configured policies course (never from viewing the policy page;
+   * hidden when no policies course is set or found), and the certificate item once a certificate exists.
+   * Contacting the admin is not a task; it lives in the Support card.
+   *
+   * @return array<int,array{key:string,label:string,done:bool}>
+   */
+  public static function build_action_items( array $data ): array {
+    $new_hire = ! empty( $data['new_hire']['active'] ) && empty( $data['new_hire']['complete'] );
+    $items    = array(
+      array(
+        'key'   => 'courses',
+        'label' => $new_hire
+          ? sprintf( __( 'Complete all new hire courses within %d days', 'ghca-ecd' ), (int) ( $data['new_hire']['deadline_days'] ?? 30 ) )
+          : __( 'Complete annual compliance training', 'ghca-ecd' ),
+        'done'  => $new_hire ? ! empty( $data['all_complete'] ) : ( ! empty( $data['annual_training_complete'] ) || ! empty( $data['all_complete'] ) ),
+      ),
+      array(
+        'key'   => 'quizzes',
+        'label' => $new_hire ? __( 'Pass required new hire quizzes', 'ghca-ecd' ) : __( 'Pass required quizzes', 'ghca-ecd' ),
+        'done'  => ! empty( $data['all_complete'] ),
+      ),
+    );
+
+    $policies = is_array( $data['policies'] ?? null ) ? $data['policies'] : array();
+    if ( (int) ( $policies['course_id'] ?? 0 ) > 0 ) {
+      $items[] = array(
+        'key'   => 'policies',
+        'label' => __( 'Review company policies', 'ghca-ecd' ),
+        'done'  => ! empty( $policies['completed'] ),
       );
     }
 
-    return array(
-      array(
-        'label' => __( 'Complete annual compliance training', 'ghca-ecd' ),
-        'done'  => ! empty( $data['annual_training_complete'] ) || ! empty( $data['all_complete'] ),
-      ),
-      array(
-        'label' => __( 'Pass required quizzes', 'ghca-ecd' ),
-        'done'  => ! empty( $data['all_complete'] ),
-      ),
-      array(
-        'label' => __( 'Review company policies', 'ghca-ecd' ),
-        'done'  => false,
-      ),
-      array(
-        'label' => __( 'Download certificate if needed', 'ghca-ecd' ),
-        'done'  => ! empty( $data['certificate_url'] ),
-      ),
-      array(
-        'label' => __( 'Contact admin if something looks wrong', 'ghca-ecd' ),
-        'done'  => false,
-      ),
+    $items[] = array(
+      'key'   => 'certificate',
+      'label' => __( 'Download certificate if needed', 'ghca-ecd' ),
+      'done'  => ! empty( $data['certificate_url'] ),
     );
+
+    return $items;
   }
 
   /** @return array<int,array{label:string,url:string,icon?:string,subtitle?:string,tone?:string}> */
-  private static function get_quick_links(): array {
+  public static function get_quick_links(): array {
     $my_courses = get_page_by_path( 'my-courses' );
     $cert       = get_page_by_path( 'cert-download' );
     $transcript = get_page_by_path( 'transcript' );

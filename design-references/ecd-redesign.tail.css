@@ -1,0 +1,369 @@
+/* Plugin adapter: page placement, and the layout the Emp-Home / Emp-Certificates boards draw with inline styles.
+   Tokens only (var(--gh-*)); no colour literals except the boards' own white-on-brand translucency. */
+
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) [hidden] { display: none !important; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app { display: block; width: 100%; max-width: none; margin: 0; padding: 0; text-align: left; font-style: normal; font-weight: 400; letter-spacing: normal; text-transform: none; word-spacing: normal; background: var(--gh-surface-page); color: var(--gh-text); }
+
+/* Full-bleed: break out of narrow theme content columns to the viewport width (filter ghca_ecd_ui_full_bleed).
+   --ghca-ecd-ui-sbw is the scrollbar width, measured by assets/ecd-redesign.js. */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope).ghca-ecd-ui--bleed { position: relative; box-sizing: border-box; width: calc(100vw - var(--ghca-ecd-ui-sbw, 0px)) !important; max-width: calc(100vw - var(--ghca-ecd-ui-sbw, 0px)) !important; margin-left: calc(50% - 50vw + var(--ghca-ecd-ui-sbw, 0px) / 2) !important; margin-right: calc(50% - 50vw + var(--ghca-ecd-ui-sbw, 0px) / 2) !important; }
+
+/* Same page width as the admin compliance dashboard: up to 1480px, 24px gutters on narrower desktops, 16px on phones. */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-container { max-width: 1480px; box-sizing: border-box; }
+@media (min-width: 720px) and (max-width: 1365px) {
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-container { padding-left: 24px; padding-right: 24px; }
+}
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-main { padding-top: 32px; padding-bottom: 48px; display: flex; flex-direction: column; gap: 24px; }
+
+/* Themes paint link hovers and link children; links whose design rules set none keep none. Zero added specificity. */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) :where(.gh-app a) { background-color: transparent; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) :where(.gh-app a :is(strong, b)) { color: inherit; }
+
+/* Themes force heading case and style with !important; the design never declares them, so state them here. */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app :is(h1, h2, h3, h4, .gh-h1, .gh-h2, .gh-h3, .gh-h4, .gh-display) { text-transform: none !important; font-style: normal !important; }
+
+/* ---- Welcome ------------------------------------------------------------------------------------------------ */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-hello { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-hello-t { flex: 1 1 0%; min-width: 260px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-hello-t .gh-meta { margin-top: 6px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-hello-p { display: flex; gap: 14px; align-items: center; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-ring { --sz: 80px; --th: 9px; --ring-bg: var(--gh-surface-page); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-ring .gh-ring-v { font-size: 20px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-alert { align-items: center; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-alert .gh-alert-body { flex: 1 1 0%; min-width: 0; }
+
+/* ---- Next up ------------------------------------------------------------------------------------------------ */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-next { border-radius: var(--gh-radius-xl); background: var(--gh-color-primary); color: var(--gh-color-on-primary); padding: 28px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-next-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-next-badge { background: var(--gh-color-accent); color: var(--gh-color-on-accent); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-next-n, :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-next-s { font-size: 13px; opacity: .85; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-next-eye { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; opacity: .8; font-weight: 600; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app .gh-ecd-next-t { color: inherit; font-size: 34px; line-height: 40px; margin-top: 6px; overflow-wrap: anywhere; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-next-d { opacity: .9; max-width: 560px; color: inherit; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-next-ft { margin-top: auto; display: flex; flex-direction: column; gap: 10px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-next-bar { height: 8px; border-radius: 99px; background: rgba(255, 255, 255, .22); overflow: hidden; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-next-bar > span { display: block; height: 100%; border-radius: inherit; background: var(--gh-color-accent); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-next-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+/* ---- Required actions ---------------------------------------------------------------------------------------- */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-col { display: flex; flex-direction: column; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-acts { list-style: none; margin: 0; padding: 8px 12px 12px; display: flex; flex-direction: column; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app .gh-ecd-act, :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-ecd-act:is(:link, :visited, :hover, :focus, :active) { display: flex; gap: 12px; align-items: center; min-height: 52px; padding: 6px 8px; border-radius: 10px; text-decoration: none; color: var(--gh-text); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-ecd-act:hover { background-color: var(--gh-surface-hover); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-ecd-act:focus-visible { outline: none; box-shadow: var(--gh-focus-ring); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-act > .gh-i:first-child { flex: none; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-act.is-done > .gh-i:first-child { color: var(--gh-status-success-fg); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-act.is-due > .gh-i:first-child { color: var(--gh-status-warning-fg); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-act.is-todo > .gh-i:first-child { color: var(--gh-neutral-400); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-act > .gh-i:last-child:not(:first-child) { color: var(--gh-text-muted); flex: none; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-act-t { flex: 1 1 0%; min-width: 0; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-act-t > span { display: block; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-act-l { font-weight: 600; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-act.is-done .gh-ecd-act-l { text-decoration: line-through; color: var(--gh-text-muted); }
+
+/* ---- Announcements ------------------------------------------------------------------------------------------- */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-anns { padding: 4px 20px 8px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-anns > .gh-ann:last-child { border-bottom: 0; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-ann-b { flex: 1 1 0%; min-width: 0; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app .gh-ann-meta a, :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app .gh-ann-meta a:is(:link, :visited, :hover, :focus, :active) { color: var(--gh-agency-ink, var(--gh-text-link)); font-weight: 600; text-decoration: none; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app .gh-ann-meta a:hover { text-decoration: underline; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-empty { padding: 14px 0; color: var(--gh-text-muted); font-size: 13px; line-height: 18px; }
+
+/* ---- Ticker -------------------------------------------------------------------------------------------------- */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ticker-track { list-style: none; margin: 0; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-ticker-msg { flex: 1 1 0%; min-width: 0; display: flex; align-items: center; padding: 0 16px; font-size: 13px; line-height: 18px; color: var(--gh-text-secondary); }
+
+/* ---- Status strip -------------------------------------------------------------------------------------------- */
+@media (min-width: 1180px) {
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-kpis { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-chip { align-self: flex-start; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-of { font-size: 16px; color: var(--gh-text-muted); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-kpis .gh-stat-val.gh-ecd-date { font-size: 20px; line-height: 28px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-kpis .gh-stat-sub.gh-ecd-warn { color: var(--gh-status-warning-fg); font-weight: 600; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-kpis .gh-bar { margin-top: 6px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-kpis .gh-bar > span { display: block; height: 100%; border-radius: inherit; background: var(--gh-color-primary); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-ecd-statlink, :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-ecd-statlink:is(:link, :visited, :hover, :focus, :active) { align-self: flex-start; color: var(--gh-agency-ink, var(--gh-text-link)); font-weight: 600; text-decoration: none; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-ecd-statlink:hover { text-decoration: underline; }
+
+/* ---- Quick links: five across, agency brand like the admin dashboard -------------------------------------------- */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-qlinks { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+@media (max-width: 1240px) { :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-qlinks { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 560px) { :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-qlinks { grid-template-columns: 1fr 1fr; } }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-qlink, :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-qlink:is(:link, :visited, :hover, :focus, :active) { color: var(--gh-agency-ink, var(--gh-text)); text-decoration: none; box-shadow: none; background-color: var(--gh-surface-card); border-color: var(--gh-border); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-qlink:hover, :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-qlink:active { background-color: var(--gh-agency-soft, var(--gh-surface-hover)); border-color: var(--gh-agency-ink, var(--gh-border-strong)); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-qlink:focus-visible { outline: 2px solid var(--gh-agency-ink, var(--gh-focus)) !important; outline-offset: 2px !important; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-qlink strong, :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-qlink .gh-i { color: inherit; text-decoration: none; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-qlink > span > span { color: var(--gh-text-muted); text-decoration: none; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app .gh-btn--primary.gh-ecd-agency, :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-btn--primary.gh-ecd-agency:is(:link, :visited, :focus) { background-color: var(--gh-agency, var(--gh-color-primary)); color: var(--gh-agency-on, var(--gh-color-on-primary)); border-color: transparent; text-decoration: none; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-btn--primary.gh-ecd-agency:is(:hover, :active, :focus-visible) { background-color: var(--gh-agency-hover, var(--gh-color-primary-hover)); color: var(--gh-agency-on-hover, var(--gh-color-on-primary)); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app .gh-btn .gh-i { color: inherit; }
+
+/* ---- Support strip ------------------------------------------------------------------------------------------- */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-help { padding: 18px 20px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-help > .gh-stat-ico { width: 44px; height: 44px; background: var(--gh-surface-card); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-help > div { flex: 1 1 0%; min-width: 240px; }
+
+/* ---- Certificates -------------------------------------------------------------------------------------------- */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-sub { margin-top: 4px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-tools { display: flex; gap: 8px; flex-wrap: wrap; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-earned { display: flex; flex-wrap: wrap; gap: 20px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-cert { flex: 1 1 460px; display: flex; gap: 20px; padding: 20px; align-items: center; flex-wrap: wrap; min-width: 0; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-cert-pv { width: 170px; height: 124px; flex: none; box-sizing: border-box; border-radius: 10px; border: 1px solid var(--gh-border-strong); background: var(--gh-surface-page); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 10px; box-shadow: inset 0 0 0 5px var(--gh-surface-card), inset 0 0 0 6px var(--gh-accent-300); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-cert-pv > .gh-i { color: var(--gh-color-accent-text); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-cert-pv-t { font-family: var(--gh-font-heading); font-size: 12px; line-height: 15px; text-align: center; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-cert-pv > .gh-ghost-bar { width: 60%; height: 5px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-cert-b { flex: 1 1 0%; min-width: 200px; display: flex; flex-direction: column; gap: 8px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-cert-b > .gh-st { align-self: flex-start; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-cert-a { display: flex; gap: 8px; flex-wrap: wrap; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-outside { flex: 1 1 300px; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-outside > .gh-st { align-self: flex-start; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-none { flex: 1 1 100%; padding: 20px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-none > div { flex: 1 1 0%; min-width: 220px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-none > .gh-stat-ico { width: 44px; height: 44px; background: var(--gh-accent-100); color: var(--gh-color-accent-text); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-count { color: var(--gh-text-muted); font-weight: 500; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-locked { list-style: none; margin: 0; padding: 0; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app .gh-ecd-lock, :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-ecd-lock:is(:link, :visited, :hover, :focus, :active) { display: flex; gap: 14px; align-items: center; padding: 12px 20px; border-bottom: 1px solid var(--gh-border); flex-wrap: wrap; color: var(--gh-text); text-decoration: none; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-locked > li:last-child > .gh-ecd-lock { border-bottom: 0; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-ecd-lock:hover { background-color: var(--gh-surface-hover); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-ecd-lock:focus-visible { outline: none; box-shadow: inset var(--gh-focus-ring); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-lock > .gh-stat-ico { background: var(--gh-surface-sunken); color: var(--gh-text-muted); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-lock-t { flex: 1 1 0%; min-width: 200px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-lock-t > * { display: block; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-lock-go { display: inline-flex; align-items: center; min-height: 32px; padding: 0 10px; border-radius: var(--gh-radius-md); font-size: 13px; font-weight: 600; color: var(--gh-agency-ink, var(--gh-text-link)); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-lock:hover .gh-ecd-lock-go { text-decoration: underline; }
+
+/* ---- Tablet: the three-up row folds to two with Next up on its own row (design system rule) ---------------------- */
+
+/* ---- Phones (M-Emp-Home, M-Emp-Certs) ------------------------------------------------------------------------- */
+@media (max-width: 719px) {
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app { font-size: 15px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-main { padding-top: 20px; padding-bottom: 40px; gap: 16px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-hello { gap: 14px; flex-wrap: nowrap; }
+  /* The avatar stays on phones: it is where the employee changes their photo. */
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-hello > .gh-avatar { width: 48px; height: 48px; font-size: 17px; align-self: flex-start; margin-top: 4px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-hello > .gh-avatar .gh-ecd-avatar-cam { width: 22px; height: 22px; right: -4px; bottom: -4px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-hello-t { min-width: 0; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-hello-t .gh-h1 { font-size: 26px; line-height: 32px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-hello-t .gh-meta > .gh-ecd-today { display: none; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-hello-p > div:last-child { display: none; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-ring { --sz: 68px; --th: 8px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-ring .gh-ring-v { font-size: 16px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-alert { align-items: flex-start; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-alert > .gh-btn { display: none; } /* M-Emp-Home: the Next up card carries the course button. */
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ehome3 { grid-template-columns: minmax(0, 1fr); }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-next { border-radius: 20px; padding: 20px; gap: 12px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app .gh-ecd-next-t { font-size: 30px; line-height: 34px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-next-d { display: none; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-next-row > .gh-btn { width: 100%; min-height: 52px; justify-content: center; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-acts { padding: 4px 8px 8px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app .gh-ecd-act { min-height: 56px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-anns { padding: 0 16px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-kpis { grid-template-columns: 1fr 1fr; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-kpis > .gh-stat:first-child { grid-column: 1 / -1; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-kpis .gh-stat-val { font-size: 24px; line-height: 30px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-kpis .gh-stat-val.gh-ecd-date { font-size: 16px; line-height: 22px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-help > .gh-btn { width: 100%; justify-content: center; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-btn { min-height: var(--gh-touch); }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-tools, :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-tools > .gh-btn { width: 100%; justify-content: center; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-cert { padding: 18px; gap: 12px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-cert-pv { display: none; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-cert-a > .gh-btn { flex: 1 1 100%; justify-content: center; min-height: 48px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-cert-a > .gh-btn--secondary { display: none; } /* M-Emp-Certs: Download PDF only. */
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app .gh-ecd-lock { flex-wrap: nowrap; padding: 10px 14px; min-height: 60px; gap: 12px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-lock-t { min-width: 0; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-lock-t > .gh-small, :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-lock-go { display: none; }
+}
+
+/* ==========================================================================
+ * Overlays ported from the admin plugin adapter (gh-redesign.tail.css, PR #19): the ODP bulletin drawer
+ * (ODP-Drawer-Employee board) and the certificate viewer (Modal-CertViewer, Modal-CertViewer-States).
+ * Same rules, re-prefixed for this plugin wrapper.
+ * ========================================================================== */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-bul-step button:disabled { opacity: .4; cursor: default; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ticker:not(.is-animated) .gh-ticker-track { animation: none; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ticker-item a { cursor: pointer; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-odp-layer { position: fixed; inset: 0; z-index: 100000; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-odp-layer .gh-scrim { position: fixed; inset: 0; z-index: 0; cursor: pointer; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-odp-layer .gh-drawer.gh-bul { position: fixed; z-index: 1; top: 0; right: 0; bottom: 0; height: 100%; width: min(480px, 100%); box-shadow: var(--gh-shadow-3); outline: 0; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-bul-sum p { white-space: pre-line; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-bul-x, :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-bul-step button { padding: 0; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-bul-note { margin-bottom: 0; }
+@media (max-width: 719px) {
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-odp-layer .gh-drawer.gh-bul { width: 100%; border-left: 0; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-bul-hd { min-height: 56px; padding: 6px 8px 6px 16px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-bul-bd { padding: 20px 20px 24px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-bul-h { font-size: 24px; line-height: 30px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-bul-ft { flex-wrap: wrap; gap: 6px; padding: 12px 16px 24px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-bul-ft .gh-btn { min-height: 48px; padding: 0 16px; font-size: var(--gh-text-sm); gap: 8px; }
+}
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-mod-layer { position: fixed; inset: 0; z-index: 100003; display: grid; place-items: center; padding: 16px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-mod-layer .gh-scrim { position: fixed; inset: 0; z-index: 0; cursor: pointer; }
+/* ---- Slice 9: certificate viewer (Modal-CertViewer, Modal-CertViewer-States; gh-components v2.4.2 .gh-cv) ------ */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .i-zoom-out{--i:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='black'><path d='M224,128a8,8,0,0,1-8,8H40a8,8,0,0,1,0-16H216A8,8,0,0,1,224,128Z'/></svg>")}
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .i-fit{--i:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='black'><path d='M136,40V216a8,8,0,0,1-16,0V40a8,8,0,0,1,16,0ZM69.66,90.34a8,8,0,0,0-11.32,0l-32,32a8,8,0,0,0,0,11.32l32,32a8,8,0,0,0,11.32-11.32L51.31,136H96a8,8,0,0,0,0-16H51.31l18.35-18.34A8,8,0,0,0,69.66,90.34Zm160,32-32-32a8,8,0,0,0-11.32,11.32L204.69,120H160a8,8,0,0,0,0,16h44.69l-18.35,18.34a8,8,0,0,0,11.32,11.32l32-32A8,8,0,0,0,229.66,122.34Z'/></svg>")}
+/* The viewer takes the certificate overlay's place in the dashboard's overlay ladder (dashboard.css: documents
+   100005 < certificate 100006 < toasts 100010), so a PDF opened from "View all documents" shows above that list. */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-mod-layer.gh-cv-layer { z-index: 100006; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-layer .gh-modal { position: relative; left: auto; top: auto; transform: none; z-index: 1; display: flex; flex-direction: column; max-height: calc(100vh - 32px); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-layer .gh-cv { width: min(1080px, calc(100vw - 32px)); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv .gh-modal-hd { align-items: center; gap: 12px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-ico { width: 40px; height: 40px; flex: none; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-hd-t { flex: 1; min-width: 0; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-hd-t p { margin: 2px 0 0; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-x-phone { display: none; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv .gh-modal-bd { padding: 0; gap: 0; min-height: 0; flex: 1 1 auto; overflow: auto; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; min-height: 0; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-view { display: flex; flex-direction: column; min-width: 0; border-right: 1px solid var(--gh-border); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-bar { display: flex; align-items: center; gap: 4px; padding: 8px 12px; border-bottom: 1px solid var(--gh-border); background: var(--gh-surface-card); flex-wrap: wrap; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-bar[hidden] { display: none; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-bar .gh-sep { width: 1px; height: 20px; background: var(--gh-border); margin: 0 6px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-bar .gh-num { font-size: 13px; color: var(--gh-text-secondary); min-width: 44px; text-align: center; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-grow { flex: 1; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-zoom { min-width: 52px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--gh-border); border-radius: 8px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-stage { flex: 1; padding: 24px; background: var(--gh-surface-sunken); display: flex; align-items: flex-start; justify-content: center; overflow: auto; min-height: 420px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-page { width: 100%; max-width: 620px; aspect-ratio: 11 / 8.5; background: var(--gh-surface-card); box-shadow: var(--gh-shadow-2); padding: 18px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-loading[hidden], :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-frame[hidden], :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-msg[hidden] { display: none; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-frame { width: 100%; height: min(68vh, 720px); border: 0; background: var(--gh-surface-card); box-shadow: var(--gh-shadow-2); display: block; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-msg { width: 100%; max-width: 440px; margin-top: 40px; padding: 28px; border-radius: var(--gh-radius-lg); background: var(--gh-surface-card); border: 1px solid var(--gh-border); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-msg strong { font-size: 16px; line-height: 22px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-msg p { margin: 0; font-size: 14px; line-height: 21px; color: var(--gh-text-secondary); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-msg-ico { width: 44px; height: 44px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: var(--gh-surface-sunken); border: 1px solid var(--gh-border); color: var(--gh-text-secondary); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-msg-ico--warning { background: var(--gh-status-warning-bg); color: var(--gh-status-warning-fg); border-color: transparent; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-msg-ico--danger { background: var(--gh-status-danger-bg); color: var(--gh-status-danger-fg); border-color: transparent; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-side { padding: 20px; display: flex; flex-direction: column; gap: 16px; background: var(--gh-surface-card); min-width: 0; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-side-hd { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-side h3 { margin: 0; font-size: 15px; line-height: 20px; font-weight: 600; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-dl { margin: 0; display: flex; flex-direction: column; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-dl > div { display: flex; flex-direction: column; gap: 2px; padding: 9px 0; border-top: 1px solid var(--gh-border); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-dl > div:first-child { border-top: 0; padding-top: 0; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-dl dt { font-size: 12px; line-height: 16px; color: var(--gh-text-muted); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-dl dd { margin: 0; font-size: 14px; line-height: 20px; color: var(--gh-text); font-weight: 500; overflow-wrap: anywhere; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-note { margin: 0; display: flex; gap: 6px; align-items: flex-start; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-ft { flex-wrap: wrap; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-ft-msg { margin: 0 auto 0 0; color: var(--gh-text-secondary); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-ft-msg:empty { display: none; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-newtab-ft { display: none; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv [hidden] { display: none; }
+/* Tablet: one column, details below the page (the states board is 760px wide, single column). */
+@media (max-width: 1023px) {
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-layer .gh-cv { width: min(760px, calc(100vw - 32px)); }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-grid { grid-template-columns: minmax(0, 1fr); }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-view { border-right: 0; border-bottom: 1px solid var(--gh-border); }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv .gh-btn { min-height: var(--gh-touch, 44px); }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv .gh-btn--icon { min-width: var(--gh-touch, 44px); }
+}
+/* Phone: a full-screen sheet; close top-left; details below the page; 48px stacked actions. */
+@media (max-width: 719px) {
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-layer { padding: 0; place-items: stretch; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-layer .gh-cv { width: 100vw; max-height: 100vh; height: 100vh; border-radius: 0; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv .gh-modal-hd { padding: 8px 12px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-x { display: none; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-x-phone { display: inline-flex; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-ico { display: none; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-stage { padding: 12px; min-height: 0; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-frame { height: 60vh; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-bar .gh-cv-zoom, :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-bar [data-ghca-cv-zoom], :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-bar .gh-sep, :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-bar [data-ghca-cv-newtab] { display: none; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-side { padding: 16px; gap: 10px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-ft { flex-direction: column-reverse; align-items: stretch; padding: 12px 16px 20px; gap: 8px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-ft .gh-btn { min-height: 48px; justify-content: center; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-newtab-ft { display: inline-flex; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-cv-close-btn { display: none; }
+}
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ticker-msg { flex: 1; min-width: 0; display: flex; align-items: center; padding: 0 16px; font-size: 13px; line-height: 18px; color: var(--gh-text-secondary); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ticker-state { flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; font-size: 12px; color: var(--gh-status-warning-fg); border-left: 1px solid var(--gh-border); white-space: nowrap; }
+/* Viewer loading skeleton widths (the admin markup sets these inline). */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-skel-1 { width: 40%; height: 18px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-skel-2 { width: 60%; height: 26px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-skel-3 { width: 30%; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-skel-4 { width: 50%; height: 20px; }
+/* The overlay holder at the end of <body> (assets/ecd-redesign.js portal()) takes no space on the page. */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope).ghca-ecd-ui--portal, :is(.ghca-ecd-ui, #ghca-ecd-ui-scope).ghca-ecd-ui--portal > .gh-app { height: 0; min-height: 0; margin: 0; padding: 0; background: none; overflow: visible; }
+/* No page scroll behind an open drawer or viewer. */
+html.ghca-ecd--overlay-open, html.ghca-ecd--overlay-open body { overflow: hidden; }
+
+/* ==========================================================================
+ * 1.6.0
+ * ========================================================================== */
+
+/* Camera glyph (Phosphor Icons, Regular, MIT), same mask format as the design system icons. */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .i-camera{--i:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='black'><path d='M208,56H180.28L166.65,35.56A8,8,0,0,0,160,32H96a8,8,0,0,0-6.65,3.56L75.71,56H48A24,24,0,0,0,24,80V192a24,24,0,0,0,24,24H208a24,24,0,0,0,24-24V80A24,24,0,0,0,208,56Zm8,136a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V80a8,8,0,0,1,8-8H80a8,8,0,0,0,6.66-3.56L100.28,48h55.43l13.63,20.44A8,8,0,0,0,176,72h32a8,8,0,0,1,8,8ZM128,88a44,44,0,1,0,44,44A44.05,44.05,0,0,0,128,88Zm0,72a28,28,0,1,1,28-28A28,28,0,0,1,128,160Z'/></svg>")}
+
+/* ---- Welcome avatar: profile photo, or initials; a camera badge marks it as the place to change the photo -- */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-avatar { position: relative; overflow: visible; text-decoration: none; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-ecd-avatar, :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-ecd-avatar:is(:link, :visited, :hover, :focus, :active) { color: var(--gh-color-on-primary); text-decoration: none; background-color: var(--gh-color-primary); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app .gh-ecd-avatar.has-photo, :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-ecd-avatar.has-photo:is(:link, :visited, :hover, :focus, :active) { background-color: var(--gh-surface-sunken); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-avatar > img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-avatar-cam { position: absolute; right: -2px; bottom: -2px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--gh-surface-card); color: var(--gh-text); box-shadow: 0 0 0 2px var(--gh-surface-page); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-avatar-cam .gh-i { width: 14px; height: 14px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-ecd-avatar:hover .gh-ecd-avatar-cam { background: var(--gh-surface-hover); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-ecd-avatar:focus-visible { outline: none; box-shadow: var(--gh-focus-ring); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-rmphoto { display: inline-flex; margin: 0; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app button.gh-ecd-linkbtn { background: none; border: 0; padding: 0; min-height: 0; font: inherit; color: var(--gh-text-link); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app button.gh-ecd-linkbtn:focus-visible { outline: none; box-shadow: var(--gh-focus-ring); border-radius: 4px; }
+
+/* ---- Next up: due chip beside the badge ------------------------------------------------------------------ */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-next-tags { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* ---- Required actions: secondary "Read the policy" link under the item --------------------------------------- */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-act.is-info > .gh-i:first-child { color: var(--gh-status-info-fg); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-ecd-act-sub, :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-ecd-act-sub:is(:link, :visited, :hover, :focus, :active) { display: inline-block; margin: -6px 0 6px 52px; font-size: 12.5px; font-weight: 600; color: var(--gh-agency-ink, var(--gh-text-link)); text-decoration: none; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-ecd-act-sub:hover { text-decoration: underline; }
+
+/* ---- Announcements: empty state fills the card like its neighbours ---------------------------------------- */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-anns--empty { flex: 1 1 auto; display: flex; padding: 4px 20px 20px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-empty-state { flex: 1 1 auto; min-height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 20px; border-radius: var(--gh-radius-md); background: var(--gh-surface-sunken); color: var(--gh-text-muted); text-align: center; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-empty-state > .gh-i { color: var(--gh-text-muted); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-empty-state > p { margin: 0; font-size: 14px; line-height: 20px; color: var(--gh-text-muted); }
+
+/* ---- What's blocking my packet ------------------------------------------------------------------------------ */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-blocks { list-style: none; margin: 0; padding: 4px 20px 12px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-blk { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--gh-border); flex-wrap: wrap; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-blk:last-child { border-bottom: 0; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-blk > .gh-i { flex: none; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-blk.is-danger > .gh-i { color: var(--gh-status-danger-fg); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-blk.is-warning > .gh-i { color: var(--gh-status-warning-fg); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-blk-t { flex: 1 1 260px; min-width: 0; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-blk-t > span { display: block; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-blk-l { font-weight: 600; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-allset { display: flex; align-items: center; gap: 12px; padding: 16px 20px 20px; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-allset > .gh-i { color: var(--gh-status-success-fg); flex: none; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-allset p { margin: 2px 0 0; }
+
+/* ---- Still to earn: icon tint follows the chip ----------------------------------------------------------------- */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-lock.is-overdue > .gh-stat-ico { background: var(--gh-status-danger-bg); color: var(--gh-status-danger-fg); }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-lock.is-duesoon > .gh-stat-ico { background: var(--gh-status-warning-bg); color: var(--gh-status-warning-fg); }
+
+/* ---- Admin-only legacy shortcode note ----------------------------------------------------------------------- */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope).ghca-ecd-ui--note > .gh-app { background: none; }
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-legacy { display: flex; align-items: center; gap: 10px; margin: 12px 0; }
+
+/* ---- Status strip on tablets: Training status on its own row, the other four in one row (no orphan cell) ---- */
+@media (min-width: 720px) and (max-width: 1179px) {
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-kpis > .gh-stat:first-child { grid-column: 1 / -1; }
+}
+
+/* ---- ODP ticker on phones: row 1 label + controls, row 2 the scrolling headline ----------------------------- */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ticker-vp { flex: 1 1 auto; min-width: 0; }
+@media (max-width: 719px) {
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ticker { flex-wrap: wrap; align-items: center; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ticker-lbl { order: 1; margin: 6px 0 6px 8px; height: 30px; padding: 0 10px; border-radius: var(--gh-radius-pill); font-size: 12.5px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ticker-ctl { order: 2; margin-left: auto; border-left: 0; padding: 0 4px; min-height: 44px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ticker-vp, :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ticker-msg, :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-ticker-msg { order: 3; flex: 1 1 100%; min-width: 0; min-height: 44px; border-top: 1px solid var(--gh-border); }
+  /* "Saved copy" becomes its clock icon; the words stay for screen readers (and the tooltip set by the script). */
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ticker-state { font-size: 0; gap: 0; padding: 0 8px; border-left: 0; min-height: 44px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ticker-state .gh-i { width: 16px; height: 16px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ticker-ctl .gh-btn--icon { min-width: 44px; min-height: 44px; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app .gh-ticker-ctl a { display: inline-flex; align-items: center; min-height: 44px; }
+}
+/* Reduced motion: no scrolling; the newest headline shows truncated, still a link. */
+@media (prefers-reduced-motion: reduce) {
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ticker-vp { overflow: hidden; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ticker-track { display: flex; width: 100%; min-width: 0; padding-left: 16px; padding-right: 12px; box-sizing: border-box; animation: none; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ticker-item:not(:first-child) { display: none; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ticker-item:first-child { flex: 1 1 auto; min-width: 0; padding-right: 0; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ticker-item:first-child::after { display: none; }
+  :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ticker-item:first-child a { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}

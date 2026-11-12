@@ -1,0 +1,198 @@
+/* ==========================================================================
+   Prototype layer — app shell, overlay positioning in a real viewport,
+   prototype controls. Tokens only (var(--gh-*)); no colour literals.
+   The design-system files gh-tokens.css / gh-components.css are unchanged
+   except the z-index fix already shipped on the canvas.
+   ========================================================================== */
+html, body { margin: 0; }
+body { background: var(--gh-surface-page); }
+body.app-locked { overflow: hidden; }
+#root { min-height: 100vh; }
+.app-btnreset { font: inherit; text-align: left; cursor: pointer; width: 100%; }
+.app-linkbtn { background: none; border: 0; padding: 0; color: inherit; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+.app-new { height: 22px; font-size: 11px; letter-spacing: .02em; }
+.app-new .gh-i { width: 12px; height: 12px; }
+
+/* Overlays live in a fixed layer so the absolute-positioned DS drawer/modal work in a real page. */
+.app-overlay { position: fixed; inset: 0; z-index: 1000; background: transparent; }
+.app-overlay .gh-scrim { position: fixed; }
+.app-overlay .gh-drawer { position: fixed; }
+.app-overlay .gh-modal { position: fixed; }
+.app-drawer--wide { width: min(940px, 100%) !important; }
+.app-modal--sm { width: min(460px, calc(100% - 32px)) !important; }
+.app-modal--md { width: min(580px, calc(100% - 32px)) !important; }
+.app-modal--lg { width: min(860px, calc(100% - 32px)) !important; }
+.app-menu { position: absolute; top: calc(100% + 6px); z-index: 50; }
+.app-toasts { position: fixed; right: 16px; bottom: 16px; z-index: 1100; display: flex; flex-direction: column; gap: 10px; background: transparent; pointer-events: none; }
+.app-toasts .gh-toast { pointer-events: auto; }
+.app-toggle { border: 0; background: transparent; padding: 0; min-height: 40px; cursor: pointer; color: var(--gh-text); text-align: left; }
+.app-toggle:disabled { opacity: .5; cursor: not-allowed; }
+.app-cards { display: flex; flex-direction: column; gap: 10px; }
+
+/* Motion — off when the user prefers reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .app-fade { animation: app-fade var(--gh-dur) var(--gh-ease); }
+  .app-slide { animation: app-slide 220ms var(--gh-ease); }
+  .app-pop { animation: app-pop var(--gh-dur) var(--gh-ease); }
+}
+@keyframes app-fade { from { opacity: 0; } }
+@keyframes app-slide { from { transform: translateX(24px); opacity: .6; } }
+@keyframes app-pop { from { transform: translateY(6px); opacity: 0; } }
+.app-overlay .gh-modal.app-pop { animation-name: none; }
+
+/* Phones: drawer is a full-screen sheet; 44px targets. */
+@media (max-width: 719px) {
+  .app-overlay .gh-drawer, .app-drawer--wide { width: 100% !important; }
+  .gh-input, .gh-select, .gh-tab, .gh-subtab, .gh-seg button, .gh-menu-i { min-height: var(--gh-touch); }
+  .gh-pager-btns button { min-width: var(--gh-touch); height: var(--gh-touch); }
+  .gh-drawer-hd, .gh-drawer-bd, .gh-drawer-ft { padding-left: 16px; padding-right: 16px; }
+  .app-toasts { left: 12px; right: 12px; }
+  .app-toasts .gh-toast { width: 100%; }
+  .app-hide-narrow { display: none !important; }
+  .gh-tabs { flex-wrap: nowrap; }
+}
+@media (min-width: 720px) { .app-only-narrow { display: none !important; } }
+
+/* Prototype controls (not part of the product). */
+.app-protobar { position: relative; z-index: 900; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 6px 16px;
+  background: var(--gh-neutral-900); color: var(--gh-neutral-50); font: 600 12px/1.2 var(--gh-font-body); }
+.app-protobar label { display: inline-flex; gap: 6px; align-items: center; }
+.app-protobar select { font: inherit; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--gh-neutral-600); background: var(--gh-neutral-800); color: var(--gh-neutral-50); min-height: 30px; }
+.app-protobar a, .app-protobar button { color: var(--gh-neutral-50); font: inherit; }
+.app-protobar button { background: transparent; border: 1px solid var(--gh-neutral-600); border-radius: 6px; padding: 4px 10px; cursor: pointer; min-height: 30px; }
+.app-protobar nav { display: flex; gap: 4px; }
+.app-protobar nav a { padding: 6px 10px; border-radius: 6px; text-decoration: none; }
+.app-protobar nav a[aria-current="page"] { background: var(--gh-neutral-700); }
+.app-protobar .app-tag { padding: 2px 8px; border-radius: 99px; border: 1px solid var(--gh-neutral-600); }
+@media print { .app-protobar { display: none; } }
+
+/* Small layout helpers */
+.app-split { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+.app-split > .app-main { flex: 999 1 560px; min-width: 0; }
+.app-split > .app-side { flex: 1 1 300px; min-width: 0; }
+.app-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.app-between { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.app-stack { display: flex; flex-direction: column; gap: 16px; }
+.app-grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 14px; }
+.app-kv-inline { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--gh-text-secondary); }
+.app-pre { white-space: pre-wrap; }
+.app-filebtn input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.gh-modal:focus, .gh-drawer:focus { outline: none; }
+
+/* Employee phone tab bar */
+.app-tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 800; display: flex; background: var(--gh-surface-card); border-top: 1px solid var(--gh-border); padding-bottom: env(safe-area-inset-bottom); }
+.app-tabbar a { flex: 1; min-height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; font-weight: 600; color: var(--gh-text-secondary); text-decoration: none; }
+.app-tabbar a[aria-current="page"] { color: var(--gh-color-primary); box-shadow: inset 0 3px 0 var(--gh-color-primary); }
+
+/* Phones: admin top nav becomes one scrollable row under the logo. */
+@media (max-width: 719px) {
+  .gh-appbar-in { flex-wrap: wrap; row-gap: 4px; justify-content: space-between; }
+  .gh-appbar .gh-nav { order: 3; flex: 1 0 100%; width: 100%; flex-wrap: nowrap; overflow-x: auto; gap: 2px; padding-bottom: 6px; scrollbar-width: none; }
+  .gh-appbar .gh-nav a { white-space: nowrap; min-height: var(--gh-touch); font-size: 14px; }
+  .gh-appbar .gh-logo-name { font-size: 17px; }
+}
+
+/* Lower-priority table columns step out before the table would need a sideways scroll. */
+@media (max-width: 1359px) { .gh-table .app-hide-lg { display: none; } }
+@media (max-width: 1179px) { .gh-table .app-hide-md, .gh-table .app-hide-lg { display: none; } }
+
+/* Docs page: long-form Markdown inside the design system. */
+.app-doc { font-size: 15px; line-height: 1.6; color: var(--gh-text); overflow-wrap: anywhere; }
+.app-doc h1 { font-family: var(--gh-font-heading); font-size: 28px; line-height: 1.25; margin: 20px 0 8px; }
+.app-doc h2 { font-family: var(--gh-font-heading); font-size: 22px; margin: 28px 0 8px; padding-top: 12px; border-top: 1px solid var(--gh-border); }
+.app-doc h3 { font-size: 17px; margin: 20px 0 6px; }
+.app-doc p, .app-doc ul, .app-doc ol { margin: 8px 0; max-width: 80ch; }
+.app-doc code { font-family: var(--gh-font-mono, ui-monospace, monospace); font-size: 0.86em; background: var(--gh-surface-sunken); padding: 1px 5px; border-radius: 4px; }
+.app-doc pre { background: var(--gh-surface-sunken); padding: 12px 14px; border-radius: 10px; overflow-x: auto; }
+.app-doc pre code { background: none; padding: 0; }
+.app-doc table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13.5px; display: block; overflow-x: auto; }
+.app-doc th, .app-doc td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--gh-border); }
+.app-doc th { background: var(--gh-surface-sunken); font-weight: 700; }
+.app-doc a { color: var(--gh-text-link); }
+
+/* Employee drawer: 860 px so the training summary stays on one row and the Administration side cards have room. */
+@media (min-width: 720px) {
+  .app-overlay .gh-drawer:not(.app-drawer--wide) { width: min(860px, 100%); }
+  .app-dl-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .app-dl-row dd { white-space: nowrap; }
+}
+
+/* ==========================================================================
+   Drawer · Administration — mirrors the plugin's .ghca-acd__drawer-admin-*
+   look (assets/dashboard.css: hero, 2:1 grid, cards with bullet headings,
+   fact tiles with an accented last tile, dark employment card, system meta),
+   expressed in gh tokens so it follows every theme.
+   ========================================================================== */
+.app-adm { display: flex; flex-direction: column; gap: 20px; }
+.app-adm-hero { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 24px; border-radius: var(--gh-radius-xl);
+  background: linear-gradient(90deg, var(--gh-surface-sunken), var(--gh-surface-page)); }
+.app-adm-hero h3 { margin: 0; font-family: var(--gh-font-heading); font-size: 30px; font-weight: 600; line-height: 1.2; letter-spacing: -.02em; color: var(--gh-text); }
+.app-adm-hero p { margin: 8px 0 0; max-width: 60ch; color: var(--gh-text-secondary); font-size: 14px; line-height: 1.5; }
+.app-adm-hero > span { display: grid; place-items: center; width: 64px; height: 64px; flex: 0 0 64px; border-radius: 50%; background: var(--gh-color-primary); color: var(--gh-color-on-primary); }
+.app-adm-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr); gap: 20px; align-items: start; }
+.app-adm-main, .app-adm-side { display: grid; gap: 20px; align-content: start; }
+.app-adm-card { padding: 24px; border-radius: var(--gh-radius-xl); background: var(--gh-surface-card); box-shadow: var(--gh-shadow-1); }
+.app-adm-card-hd { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.app-adm-card-hd h4 { display: flex; align-items: center; gap: 10px; margin: 0; font-family: var(--gh-font-heading); font-size: 22px; font-weight: 500; line-height: 1.3; color: var(--gh-text); }
+.app-adm-card-hd h4::before { content: ""; width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; background: var(--gh-text); }
+.app-adm-card--brand .app-adm-card-hd h4::before { background: var(--gh-color-primary); }
+.app-adm-card-hd p { margin: 4px 0 0 18px; color: var(--gh-text-secondary); font-size: 14px; line-height: 1.5; }
+.app-adm-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 0 16px; border: 0; border-radius: var(--gh-radius-md);
+  background: var(--gh-primary-100); color: var(--gh-text); font: 500 14px/1 var(--gh-font-body); white-space: nowrap; cursor: pointer; }
+.app-adm-btn:hover { background: var(--gh-primary-200); }
+.app-adm-btn--primary { background: var(--gh-color-primary); color: var(--gh-color-on-primary); }
+.app-adm-btn--primary:hover { background: var(--gh-color-primary-hover); }
+.app-adm-btn:focus-visible { outline: none; box-shadow: var(--gh-focus-ring); }
+.app-adm-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 24px 0 0; }
+.app-adm-facts > div { padding: 14px; border-radius: var(--gh-radius-md); background: var(--gh-surface-sunken); }
+.app-adm-facts > div:last-child { border-left: 3px solid var(--gh-color-primary); background: var(--gh-primary-100); }
+.app-adm-facts dt { color: var(--gh-text-secondary); font-size: 11px; font-weight: 500; line-height: 1.2; letter-spacing: .05em; text-transform: uppercase; }
+.app-adm-facts dd { margin: 10px 0 0; color: var(--gh-text); font-size: 16px; font-weight: 600; line-height: 1.3; }
+.app-adm-status { padding: 24px; border-radius: var(--gh-radius-xl); background: var(--gh-color-primary); color: var(--gh-color-on-primary); }
+.app-adm-status > span { display: block; font-size: 12px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: color-mix(in srgb, var(--gh-color-on-primary) 82%, transparent); }
+.app-adm-status > strong > span { white-space: nowrap; }
+.app-adm-status > strong { display: block; margin-top: 22px; font-size: 32px; font-weight: 600; line-height: 1.05; letter-spacing: -.02em; }
+.app-adm-status > p { margin: 14px 0 0; font-size: 14px; line-height: 1.5; color: color-mix(in srgb, var(--gh-color-on-primary) 88%, transparent); }
+.app-adm-status dl { display: grid; gap: 10px; margin: 22px 0 0; padding-top: 16px; border-top: 1px solid color-mix(in srgb, var(--gh-color-on-primary) 22%, transparent); }
+.app-adm-status dl > div { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: baseline; }
+.app-adm-status dt { font-size: 14px; color: color-mix(in srgb, var(--gh-color-on-primary) 80%, transparent); }
+.app-adm-status dd { margin: 0; font-family: var(--gh-font-mono, ui-monospace, monospace); font-size: 13px; text-align: right; }
+.app-adm-meta { padding: 22px; border-radius: var(--gh-radius-xl); background: var(--gh-surface-sunken); }
+.app-adm-meta h4 { margin: 0 0 16px; font-size: 11px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--gh-text-secondary); }
+.app-adm-meta dl { display: grid; gap: 14px; margin: 0; }
+.app-adm-meta dl > div { display: grid; gap: 3px; }
+.app-adm-meta dt { font-size: 13px; font-weight: 600; color: var(--gh-text); }
+.app-adm-meta dd { margin: 0; font-family: var(--gh-font-mono, ui-monospace, monospace); font-size: 12px; line-height: 1.45; color: var(--gh-text-secondary); }
+@media (max-width: 719px) {
+  .app-adm-hero h3 { font-size: 24px; }
+  .app-adm-grid { grid-template-columns: 1fr; }
+  .app-adm-card-hd { flex-direction: column; }
+  .app-adm-facts { grid-template-columns: 1fr; }
+  .app-adm-btn { min-height: var(--gh-touch); }
+}
+
+/* Date picker pop-up (uses .gh-cal / .gh-cal-grid from the design system). */
+.app-cal-btn { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--gh-text-secondary); cursor: pointer; }
+.app-cal-btn:hover { background: var(--gh-surface-hover); color: var(--gh-text); }
+.app-cal-btn:focus-visible { outline: none; box-shadow: var(--gh-focus-ring); }
+.app-cal-btn:disabled { opacity: .45; cursor: not-allowed; }
+.app-cal { position: absolute; top: calc(100% + 6px); z-index: 60; }
+.app-cal-hd { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 8px; }
+.app-cal-nav { width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--gh-text); cursor: pointer; }
+.app-cal-nav:hover { background: var(--gh-surface-hover); }
+.app-cal-sel { display: flex; gap: 4px; }
+.app-cal-sel select { font: 600 13px/1 var(--gh-font-body); color: var(--gh-text); border: 1px solid var(--gh-border); border-radius: 8px; background: var(--gh-surface-card); padding: 6px 6px; min-height: 34px; }
+.app-cal .gh-cal-grid button { cursor: pointer; }
+.app-cal .gh-cal-grid button:hover:not(:disabled):not(.sel) { background: var(--gh-surface-hover); }
+.app-cal .gh-cal-grid button:focus-visible { outline: none; box-shadow: var(--gh-focus-ring); }
+.app-cal .gh-cal-grid button.is-disabled { color: var(--gh-neutral-300); cursor: not-allowed; text-decoration: line-through; }
+.app-cal-ft { display: flex; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--gh-border); font-size: 13px; }
+.app-cal-ft .app-linkbtn { color: var(--gh-text-link); min-height: 32px; }
+.app-cal-ft .app-linkbtn:disabled { color: var(--gh-text-muted); cursor: not-allowed; }
+@media (max-width: 719px) { .app-cal .gh-cal-grid button { height: var(--gh-touch); } .app-cal-nav, .app-cal-btn { width: var(--gh-touch); height: var(--gh-touch); } }
+
+
+/* Employee home: next-up · required actions · announcements */
+.gh-ehome3 { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
+.gh-ehome3 > * { min-width: 0; }
+@media (max-width: 1180px) { .gh-ehome3 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .gh-ehome3 > :first-child { grid-column: 1 / -1; } }

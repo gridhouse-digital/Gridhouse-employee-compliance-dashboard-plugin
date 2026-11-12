@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Preview at a fixed width</title>
+<style>html, body { margin: 0; background: #ddd; } iframe { display: block; border: 0; background: #fff; }</style>
+</head>
+<body>
+<!-- Loads the preview in an iframe of an exact width (headless Chrome will not make a window narrower than ~500px).
+     Usage: frame.html?w=390&h=4600&q=screen%3Dhome%26bul%3D7 -->
+<script>
+  (function () {
+    var p = new URLSearchParams(location.search);
+    var f = document.createElement('iframe');
+    f.width = String(parseInt(p.get('w') || '390', 10));
+    f.height = String(parseInt(p.get('h') || '3000', 10));
+    f.title = 'Preview';
+    f.src = 'render-redesign-preview.php?' + (p.get('q') || '');
+    document.body.appendChild(f);
+  })();
+</script>
+</body>
+</html>
