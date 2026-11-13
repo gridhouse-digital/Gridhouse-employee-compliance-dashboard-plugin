@@ -50,13 +50,29 @@
       running = false;
     }
 
+    // A PHP crash (out of memory, time limit) answers with an HTML/plain 500 instead of JSON. Turn that into an
+    // error naming the step, and keep the server's answer in the console for whoever investigates.
+    var STEP_ERRORS = {
+      ghca_ecd_pkt_init: 'The server stopped while preparing your packet (error %s). No packet was created. Please try again.',
+      ghca_ecd_pkt_fetch: 'The server stopped while fetching a certificate (error %s). No packet was created. Please try again.',
+      ghca_ecd_pkt_merge: 'The server stopped while merging your certificates (error %s). No packet was created. Please try again, or contact support if it keeps happening.'
+    };
     function post(params) {
       params.append('nonce', window.ghcaEcd.nonce);
+      var action = params.get('action');
       return fetch(window.ghcaEcd.ajaxUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
         body: params.toString()
-      }).then(function (res) { return res.json(); });
+      }).then(function (res) {
+        return res.text().then(function (text) {
+          try { return JSON.parse(text); } catch (e) {
+            if (window.console) console.warn('[ghca-ecd] Certificate packet: ' + action + ' answered HTTP ' + res.status + ' without JSON:', text.slice(0, 500));
+            var msg = (STEP_ERRORS[action] || 'The server stopped (error %s). No packet was created. Please try again.').replace('%s', String(res.status));
+            return { success: false, data: { message: msg } };
+          }
+        });
+      });
     }
 
     function run() {

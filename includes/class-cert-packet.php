@@ -167,6 +167,55 @@ final class GHCA_ECD_Cert_Packet {
     ) );
   }
 
+  /**
+   * Room for the heavy steps. Merging certificates (each carries a large background image) in TCPDF/FPDI can
+   * pass a host's default PHP memory or time limit, and PHP then stops with a bare 500. This raises the limits
+   * the way WordPress does for its own image work, where the host allows it.
+   */
+  private static function prepare_heavy_step(): void {
+    if ( function_exists( 'wp_raise_memory_limit' ) ) {
+      wp_raise_memory_limit( 'image' );
+    }
+    if ( function_exists( 'set_time_limit' ) && false === strpos( (string) ini_get( 'disable_functions' ), 'set_time_limit' ) ) {
+      @set_time_limit( 120 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors -- some hosts forbid it; the default stays.
+    }
+  }
+
+  /**
+   * A crash inside a step (TCPDF/FPDI throw \Error as well as \Exception) ends the job cleanly with a readable
+   * message instead of a bare 500, and leaves the real reason in the PHP error log.
+   */
+  private static function fail_step( string $job_id, string $step, \Throwable $e ): void {
+    error_log( sprintf( '[ghca-ecd] Certificate packet %s failed for user %d: %s: %s in %s:%d', $step, get_current_user_id(), get_class( $e ), $e->getMessage(), $e->getFile(), $e->getLine() ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
+    self::abort_job( $job_id );
+    wp_send_json_error( array(
+      'message' => 'merge' === $step
+        ? __( 'The server stopped while merging your certificates. No packet was created. Please try again, or contact support if it keeps happening.', 'ghca-ecd' )
+        : __( 'The server stopped while fetching a certificate. No packet was created. Please try again, or contact support if it keeps happening.', 'ghca-ecd' ),
+      'step'    => $step,
+    ) );
+  }
+
+  /**
+   * Cookies for the loopback request that fetches the employee's own certificate. Only plain string cookies
+   * (PHP turns `name[key]` cookies into arrays, which the HTTP library rejects with an exception), and not the
+   * PHP session cookie: a second request on the same session waits for this one to release the session lock,
+   * so the fetch would stall until it times out.
+   *
+   * @param array<string,mixed> $raw $_COOKIE
+   * @return array<string,string>
+   */
+  public static function loopback_cookies( array $raw, string $session_name = '' ): array {
+    $out = array();
+    foreach ( $raw as $name => $value ) {
+      if ( ! is_string( $value ) || '' === (string) $name || ( '' !== $session_name && $name === $session_name ) ) {
+        continue;
+      }
+      $out[ (string) $name ] = $value;
+    }
+    return $out;
+  }
+
   /** Phase 2: fetch ONE certificate into the job's temp folder. */
   public static function ajax_fetch(): void {
     $job = self::guard_ajax( true );
@@ -176,17 +225,24 @@ final class GHCA_ECD_Cert_Packet {
       wp_send_json_error( array( 'message' => __( 'Invalid certificate index.', 'ghca-ecd' ) ), 400 );
     }
 
+    self::prepare_heavy_step();
+
     // Forward the employee's own cookies so LearnDash serves their certificate.
     $cookies = array();
-    foreach ( $_COOKIE as $name => $value ) {
+    foreach ( self::loopback_cookies( wp_unslash( $_COOKIE ), function_exists( 'session_name' ) ? (string) session_name() : '' ) as $name => $value ) {
       $cookies[] = new \WP_Http_Cookie( array( 'name' => $name, 'value' => $value ) );
     }
 
-    $response = wp_remote_get( $job['urls'][ $index ], array(
-      'timeout'   => 25,
-      'cookies'   => $cookies,
-      'sslverify' => false,
-    ) );
+    try {
+      $response = wp_remote_get( $job['urls'][ $index ], array(
+        'timeout'   => 25,
+        'cookies'   => $cookies,
+        'sslverify' => false,
+      ) );
+    } catch ( \Throwable $e ) {
+      self::fail_step( $job['job_id'], 'fetch', $e );
+      return;
+    }
 
     $pdf_content = ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 )
       ? wp_remote_retrieve_body( $response )
@@ -216,7 +272,17 @@ final class GHCA_ECD_Cert_Packet {
   /** Phase 3: cover page + certificates -> final packet. */
   public static function ajax_merge(): void {
     $job = self::guard_ajax( true );
+    self::prepare_heavy_step();
 
+    try {
+      self::merge( $job );
+    } catch ( \Throwable $e ) {
+      self::fail_step( $job['job_id'], 'merge', $e );
+    }
+  }
+
+  /** @param array<string,mixed> $job */
+  private static function merge( array $job ): void {
     $libs = GHCA_Audit_PDF::load_libs();
     if ( is_wp_error( $libs ) ) {
       self::abort_job( $job['job_id'] );

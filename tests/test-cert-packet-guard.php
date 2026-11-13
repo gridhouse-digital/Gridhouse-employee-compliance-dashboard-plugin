@@ -58,6 +58,22 @@ check(
   ! GHCA_ECD_Cert_Packet::manifest_is_self_scoped( array(), 7 )
 );
 
+// --- loopback cookies for the certificate fetch (1.6.2) -------------------------
+$raw = array(
+  'wordpress_logged_in_abc' => 'ruth|1800000000|tok|hash',
+  'wordpress_sec_abc'       => 'ruth|1800000000|tok|hash2',
+  'PHPSESSID'               => 'sess123',
+  'wp-settings'             => array( 'editor' => 'tinymce' ), // `name[key]` cookies arrive as arrays.
+  'cf_clearance'            => 'x',
+);
+$c = GHCA_ECD_Cert_Packet::loopback_cookies( $raw, 'PHPSESSID' );
+check( 'login cookies are forwarded', isset( $c['wordpress_logged_in_abc'], $c['wordpress_sec_abc'] ) );
+check( 'PHP session cookie is not forwarded (session lock would stall the fetch)', ! isset( $c['PHPSESSID'] ) );
+check( 'array cookies are dropped (the HTTP library throws on them)', ! isset( $c['wp-settings'] ) );
+check( 'other plain cookies still forwarded (host / proxy cookies)', isset( $c['cf_clearance'] ) );
+check( 'every forwarded value is a string', count( $c ) === count( array_filter( $c, 'is_string' ) ) );
+check( 'no session name known => nothing extra dropped', isset( GHCA_ECD_Cert_Packet::loopback_cookies( $raw )['PHPSESSID'] ) );
+
 if ( $failures > 0 ) {
   echo "\n{$failures} test(s) failed.\n";
   exit( 1 );

@@ -2,6 +2,22 @@
 
 All notable changes to the Gridhouse Employee Compliance Dashboard are documented here.
 
+## [1.6.2]
+
+### Fixed
+
+- **"Download all as one PDF" failed with a bare server error (HTTP 500)** and the generic "Packet generation
+  failed" message. The packet code is unchanged since 1.4.5; the hardening covers the ways it can crash:
+  - Fetching and merging raise PHP's memory and time limits the way WordPress does for image work (where the
+    host allows it). Merging several certificates with large background images can pass a host's defaults.
+  - Crashes inside a step (TCPDF/FPDI throw `\Error` as well as `\Exception`) now end the job cleanly with a
+    readable message, and the reason goes to the PHP error log as `[ghca-ecd] Certificate packet …`.
+  - The certificate fetch forwards only plain string cookies and not the PHP session cookie: array cookies made
+    the HTTP library throw, and a shared PHP session made the fetch wait on its own session lock.
+  - If the server still stops (out of memory or time), the modal names the step and error code ("The server
+    stopped while merging your certificates (error 500)…"), and the browser console keeps the server's answer.
+- `dashboard.js` is versioned by file date, so browsers pick up the new script straight away.
+
 ## [1.6.1]
 
 ### Added
