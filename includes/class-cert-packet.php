@@ -151,13 +151,27 @@ final class GHCA_ECD_Cert_Packet {
       wp_send_json_error( array( 'message' => __( 'No certificates are available yet. Complete a course to earn your first certificate.', 'ghca-ecd' ) ) );
     }
 
-    $job_id = GHCA_Audit_PDF_Jobs::create_job(
-      $user_id,
-      $user_id,
-      'employee',
-      wp_list_pluck( $certs, 'url' ),
-      self::build_filename( $user_id )
-    );
+    // Newer admin builds throw LogicException (another build is starting or still processing) or
+    // RuntimeException (job folders can't be created). Answer with JSON, never a bare 500.
+    try {
+      $job_id = GHCA_Audit_PDF_Jobs::create_job(
+        $user_id,
+        $user_id,
+        'employee',
+        wp_list_pluck( $certs, 'url' ),
+        self::build_filename( $user_id )
+      );
+    } catch ( \Throwable $e ) {
+      error_log( sprintf( '[ghca-ecd] Certificate packet init failed for user %d: %s: %s in %s:%d', $user_id, get_class( $e ), $e->getMessage(), $e->getFile(), $e->getLine() ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
+      delete_transient( self::ACTIVE_JOB_TRANSIENT . $user_id );
+      wp_send_json_error( array(
+        'message' => $e instanceof \LogicException
+          ? __( 'Your packet is already being built. Please wait a moment and try again.', 'ghca-ecd' )
+          : __( 'The packet couldn’t be started. No packet was created. Please try again, or contact support if it keeps happening.', 'ghca-ecd' ),
+        'step'    => 'init',
+      ) );
+      return;
+    }
 
     set_transient( self::ACTIVE_JOB_TRANSIENT . $user_id, $job_id, self::ACTIVE_JOB_TTL );
 
@@ -305,9 +319,11 @@ final class GHCA_ECD_Cert_Packet {
     $pdf->AddPage();
     self::render_cover( $pdf, $user_id, trim( $first . ' ' . $last ) );
 
-    $total = count( $job['urls'] );
+    // Pages so far (the cover), as the admin plugin's own packet builder starts its count.
+    $total_pages = (int) $pdf->getPage();
+    $total       = count( $job['urls'] );
     for ( $i = 0; $i < $total; $i++ ) {
-      if ( ! GHCA_Audit_PDF::append_certificate( $pdf, GHCA_Audit_PDF_Jobs::cert_path( $job['job_id'], $i ) ) ) {
+      if ( ! self::append_certificate( $pdf, GHCA_Audit_PDF_Jobs::cert_path( $job['job_id'], $i ), $total_pages ) ) {
         // ABORT policy (defense in depth): every fetched cert must merge.
         self::abort_job( $job['job_id'] );
         wp_send_json_error( array(
@@ -335,7 +351,43 @@ final class GHCA_ECD_Cert_Packet {
         admin_url( 'admin-ajax.php' )
       ),
       'total'        => $total,
+      'pages'        => $total_pages,
     ) );
+  }
+
+  /** @var int|null Parameter count of GHCA_Audit_PDF::append_certificate(), read once per request. */
+  private static $append_arity = null;
+
+  /** Whether the admin plugin's append_certificate() takes the running page count (admin 1.7.3-beta.14 and later). */
+  public static function append_takes_page_count(): bool {
+    if ( null === self::$append_arity ) {
+      try {
+        self::$append_arity = ( new \ReflectionMethod( 'GHCA_Audit_PDF', 'append_certificate' ) )->getNumberOfParameters();
+      } catch ( \ReflectionException $e ) {
+        self::$append_arity = 2;
+      }
+    }
+    return self::$append_arity >= 3;
+  }
+
+  /**
+   * Appends one certificate through the admin plugin, whichever signature it has:
+   * - newer builds: append_certificate( Fpdi $pdf, string $path, int &$total_pages ), which checks the page
+   *   limit and adds the certificate's pages to $total_pages itself (required argument: calling it with two
+   *   arguments throws ArgumentCountError);
+   * - older builds: append_certificate( Fpdi $pdf, string $path ); the count is then read from the document.
+   *
+   * @param mixed $pdf The packet document (setasign\Fpdi\Tcpdf\Fpdi).
+   */
+  public static function append_certificate( $pdf, string $path, int &$total_pages ): bool {
+    if ( self::append_takes_page_count() ) {
+      return (bool) GHCA_Audit_PDF::append_certificate( $pdf, $path, $total_pages );
+    }
+    $ok = (bool) GHCA_Audit_PDF::append_certificate( $pdf, $path );
+    if ( $ok && is_object( $pdf ) && method_exists( $pdf, 'getPage' ) ) {
+      $total_pages = (int) $pdf->getPage();
+    }
+    return $ok;
   }
 
   /** Phase 4: stream the finished packet (the packets dir is never web-readable). */

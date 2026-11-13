@@ -2,6 +2,34 @@
 
 All notable changes to the Gridhouse Employee Compliance Dashboard are documented here.
 
+## [1.6.3]
+
+### Fixed
+
+- **Root cause of the "Download all as one PDF" 500:** the merge step called the admin plugin's
+  `GHCA_Audit_PDF::append_certificate( $pdf, $path )` with two arguments. Since admin 1.7.3-beta.14 (incl.
+  1.7.3-rc.8) it is `append_certificate( Fpdi $pdf, string $path, int &$total_pages )` with a required third
+  argument, so every merge threw `ArgumentCountError` (an `\Error`), which nothing caught. The `is_available()`
+  check only tested that the method exists, not its signature.
+  - The merge now keeps a running page count, starting from the pages after the cover (`$pdf->getPage()`, as the
+    admin plugin's own packet builder does), and passes it by reference on every call.
+  - Works with both signatures: `ReflectionMethod` reads the parameter count once per request, and the count is
+    passed only when the method takes it. With the older two-argument method the count is read from the document.
+  - The merge response also returns `pages` (the packet's page count).
+- **Init:** `GHCA_Audit_PDF_Jobs::create_job()` can throw `LogicException` (a build is already starting or
+  still processing) or `RuntimeException` (job folders can't be created). Init now answers with a JSON error and
+  writes `[ghca-ecd] Certificate packet init failed …` to the error log, instead of a 500.
+- The 1.6.2 hardening stays (`\Throwable` catch in fetch and merge, raised limits, plain-cookie filter,
+  step-named errors in the modal). 1.6.2 would have turned this 500 into "The server stopped while merging",
+  but every merge would still have failed.
+
+### Tests
+
+- `tests/test-v163.php` runs the real `ajax_merge()` / `ajax_init()` against a stub `GHCA_Audit_PDF` with the
+  3-argument by-reference signature and with the 2-argument one (one PHP process each), checks there is no
+  `ArgumentCountError`, the page count (cover 1 + certificates 1 + 2 + 1 = 5), a refused certificate, an
+  `\Error` during merge, and both `create_job()` exceptions.
+
 ## [1.6.2]
 
 ### Fixed
