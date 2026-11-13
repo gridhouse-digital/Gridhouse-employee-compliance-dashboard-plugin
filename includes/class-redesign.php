@@ -567,6 +567,10 @@ final class GHCA_ECD_Redesign {
     if ( '' !== $due_sub ) {
       $h .= '<span class="gh-stat-sub' . ( $due_warn ? ' gh-ecd-warn' : '' ) . '">' . esc_html( $due_sub ) . '</span>';
     }
+    // Training-year switch on: the window and the annual hours threshold, straight from the admin API.
+    foreach ( self::training_year_lines( $data ) as $key => $line ) {
+      $h .= '<span class="gh-stat-sub gh-ecd-ty' . ( 'flag' === $key ? ' gh-ecd-warn' : '' ) . '" data-ghca-ty="' . esc_attr( $key ) . '">' . esc_html( $line ) . '</span>';
+    }
     $h .= '</div>';
 
     $certs = (int) ( $data['packet_certificate_count'] ?? 0 );
@@ -574,6 +578,35 @@ final class GHCA_ECD_Redesign {
     $h    .= '<a class="gh-small gh-ecd-statlink" href="' . esc_url( self::certificates_url() ) . '">' . esc_html( $certs > 0 ? __( 'Download', 'ghca-ecd' ) : __( 'View', 'ghca-ecd' ) ) . ' →</a></div>';
 
     return $h . '</section>';
+  }
+
+  /**
+   * Lines shown next to the due date while the admin training-year switch is on: the training-year window,
+   * the annual hours threshold and, for an unmapped role, "Role requirement not set". Empty when the switch
+   * is off (the snapshot has no 'training_year' key), so the 1.6.3 output is unchanged.
+   *
+   * @param array<string,mixed> $data
+   * @return array<string,string> 'window' | 'hours' | 'flag' => text
+   */
+  public static function training_year_lines( array $data ): array {
+    if ( empty( $data['training_year'] ) || ! is_array( $data['training_year'] ) ) {
+      return array();
+    }
+    $ty    = $data['training_year'];
+    $lines = array();
+    if ( '' !== (string) ( $ty['window_label'] ?? '' ) ) {
+      /* translators: %s: date range, e.g. "Oct 20, 2026 – Oct 19, 2027" */
+      $lines['window'] = sprintf( __( 'Training year: %s', 'ghca-ecd' ), (string) $ty['window_label'] );
+    }
+    $hours          = (int) ( $ty['hours'] ?? 0 );
+    $lines['hours'] = $hours > 0
+      /* translators: %d: annual training hours */
+      ? sprintf( _n( '%d hour required this training year', '%d hours required this training year', $hours, 'ghca-ecd' ), $hours )
+      : __( 'Annual hours not required', 'ghca-ecd' );
+    if ( ! empty( $ty['requirement_not_set'] ) ) {
+      $lines['flag'] = __( 'Role requirement not set', 'ghca-ecd' );
+    }
+    return $lines;
   }
 
   /**

@@ -2,6 +2,32 @@
 
 All notable changes to the Gridhouse Employee Compliance Dashboard are documented here.
 
+## [1.6.4]
+
+Ships with admin 2.0.0-rc.2. Uses the admin training-year calculator (`GHCA_ACD_Training_Year`) when the admin
+switch `ghca_acd_training_year_rules` is on, so the employee and admin dashboards show the same dates.
+
+### Changed
+
+- **Switch on:** the admin API is the single source of truth. This plugin calls `enabled()`, `due()`, `window()`,
+  `requirement()` and `course()` and does no training-year date math of its own.
+  - Due date and compliance cycle come from `due()` and `window()`. "Hire date missing" and "Training year not
+    configured" are shown as returned. `days_remaining` counts whole days to the due day in the site time zone
+    (0 on the due day itself).
+  - The `ghca_compliance_due_date` option and filter and the 365-day cycle are never used as a fallback.
+  - The renewal notice counts down to the training-year due date. A due day that has passed now shows an
+    "Overdue" notice; the 365-day cycle could never reach that state.
+  - Per-course state, expiry and due badges come from `course()`, not `GHCA_Course_Lifespans::decorate()`. This
+    covers Next Up, the course chips, certificate expiry and the LearnDash profile traffic light.
+  - The Due date card (redesign) and the Compliance Due Date KPI (legacy) also show the training-year window and
+    the annual hours threshold, plus "Role requirement not set" when the role is unmapped (`source` is `default`).
+  - Snapshots are cached under a separate key while the switch is on, so turning it on or off never serves a
+    snapshot built under the other rules.
+- **Switch off, admin plugin absent, or API partial** (any of the five methods missing): output is identical to
+  1.6.3. `tests/test-v164.php` checks this against the 1.6.3 code itself.
+- If an admin API call throws, it is logged as `[ghca-ecd] Training-year API …` and the dashboard still renders.
+- The certificate packet's `append_certificate` compatibility from 1.6.3 is unchanged.
+
 ## [1.6.3]
 
 ### Fixed

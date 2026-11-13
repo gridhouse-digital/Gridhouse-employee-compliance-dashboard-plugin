@@ -321,7 +321,7 @@ final class GHCA_ECD_Shortcodes {
             <span class="ghca-ecd__kpi-value ghca-ecd__kpi-value--date<?php echo $due_is_warning ? ' ghca-ecd__kpi-value--warning' : ''; ?>"><?php echo esc_html( $data['compliance_due_date_label'] ); ?></span>
           </div>
           <p class="ghca-ecd__kpi-foot<?php echo $due_is_warning ? ' ghca-ecd__kpi-foot--warning' : ''; ?>"><?php esc_html_e( 'Complete all courses before this date.', 'ghca-ecd' ); ?></p>
-        </div>
+        <?php echo self::training_year_kpi_lines( $data ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside. ?></div>
 
         <div class="ghca-ecd__kpi">
           <div class="ghca-ecd__kpi-top">
@@ -385,6 +385,20 @@ final class GHCA_ECD_Shortcodes {
   }
 
   /** @param array<string,mixed> $data */
+  /**
+   * Training-year window and hours threshold under the legacy Compliance Due Date KPI (admin switch on only).
+   * Returns '' when the switch is off, so the legacy markup is byte-identical to 1.6.3.
+   *
+   * @param array<string,mixed> $data
+   */
+  private static function training_year_kpi_lines( array $data ): string {
+    $html = '';
+    foreach ( GHCA_ECD_Redesign::training_year_lines( $data ) as $key => $line ) {
+      $html .= '<p class="ghca-ecd__kpi-foot' . ( 'flag' === $key ? ' ghca-ecd__kpi-foot--warning' : '' ) . '" data-ghca-ty="' . esc_attr( $key ) . '">' . esc_html( $line ) . '</p>';
+    }
+    return $html;
+  }
+
   private static function get_due_days_remaining( array $data, bool $is_new_hire ): ?int {
     if ( $is_new_hire && isset( $data['new_hire']['days_remaining'] ) && is_numeric( $data['new_hire']['days_remaining'] ) ) {
       return (int) $data['new_hire']['days_remaining'];

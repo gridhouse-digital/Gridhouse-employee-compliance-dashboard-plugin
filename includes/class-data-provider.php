@@ -53,7 +53,9 @@ final class GHCA_ECD_Data_Provider {
   }
 
   private static function get_cache_key( int $user_id ): string {
-    return self::build_cache_key( GHCA_Employee_Compliance_Dashboard::VERSION, $user_id, (string) wp_date( 'Ymd' ) );
+    // A separate key while the admin training-year switch is on, so flipping it never serves a snapshot built by the other rules.
+    $version = GHCA_Employee_Compliance_Dashboard::VERSION . ( GHCA_ECD_Training_Year::active() ? '-ty' : '' );
+    return self::build_cache_key( $version, $user_id, (string) wp_date( 'Ymd' ) );
   }
 
   /** Delete one user's snapshot for today and reset the request-scoped memos. */
@@ -106,6 +108,7 @@ final class GHCA_ECD_Data_Provider {
     }
 
     $user            = get_userdata( $user_id );
+    $training_year   = GHCA_ECD_Training_Year::active();
     $new_hire        = self::get_new_hire_status( $user_id );
     $courses         = ( ! empty( $new_hire['active'] ) && empty( $new_hire['complete'] ) )
       ? self::map_new_hire_courses( $new_hire )
@@ -150,7 +153,7 @@ final class GHCA_ECD_Data_Provider {
 
     if ( ! empty( $new_hire['overdue'] ) ) {
       $training_status = 'new_hire_overdue';
-    } elseif ( class_exists( 'GHCA_Course_Lifespans' ) ) {
+    } elseif ( $training_year || class_exists( 'GHCA_Course_Lifespans' ) ) {
       $course_states = array_column( $courses, 'compliance_state' );
       if ( in_array( 'expired', $course_states, true ) ) {
         $training_status = 'expired';
@@ -179,10 +182,15 @@ final class GHCA_ECD_Data_Provider {
       : self::get_compliance_cycle( $user_id );
     $due_raw = ( ! empty( $new_hire['active'] ) && empty( $new_hire['complete'] ) && ! empty( $new_hire['deadline_ts'] ) )
       ? wp_date( 'Y-m-d', (int) $new_hire['deadline_ts'] )
-      : ( $cycle['due_date'] ?? (string) apply_filters(
-        'ghca_compliance_due_date',
-        get_option( GHCA_Employee_Compliance_Dashboard::OPTION_DUE_DATE, '2026-07-31' ),
-        $user_id
+      : ( $cycle['due_date'] ?? (
+        // Training-year switch on: the admin due() date only, never the plugin option, its filter or the 365-day cycle.
+        $training_year
+          ? (string) self::get_compliance_cycle( $user_id )['due_date']
+          : (string) apply_filters(
+            'ghca_compliance_due_date',
+            get_option( GHCA_Employee_Compliance_Dashboard::OPTION_DUE_DATE, '2026-07-31' ),
+            $user_id
+          )
       ) );
 
     // Certificates eligible for the self-service packet (always measured
@@ -245,6 +253,11 @@ final class GHCA_ECD_Data_Provider {
       'new_hire_flagged'          => ! empty( $new_hire['flagged'] ),
     );
 
+    // Only with the switch on, so the snapshot (and every label) is unchanged from 1.6.3 when it is off.
+    if ( $training_year ) {
+      self::$snapshot['training_year'] = self::training_year_summary( $user_id );
+    }
+
     if ( $ttl > 0 ) {
       set_transient( self::get_cache_key( $user_id ), self::$snapshot, $ttl );
     }
@@ -265,6 +278,7 @@ final class GHCA_ECD_Data_Provider {
     $course_ids = array_map( 'intval', (array) learndash_user_get_enrolled_courses( $user_id ) );
     $course_ids = array_values( array_unique( array_filter( $course_ids ) ) );
     $items      = array();
+    $ty_courses = GHCA_ECD_Training_Year::active();
 
     foreach ( $course_ids as $course_id ) {
       $title     = self::normalize_course_title(
@@ -286,8 +300,18 @@ final class GHCA_ECD_Data_Provider {
       $lifespan_days = 0;
       $expiration_ts = 0;
       $expiration_label = '';
+      $follows_year     = null;
 
-      if ( class_exists( 'GHCA_Course_Lifespans' ) ) {
+      if ( $ty_courses ) {
+        // Training-year switch on: the admin calculator owns per-course due dates. decorate() is not called here,
+        // because for annual ODP courses it zeros the lifespan instead of returning the training-year due date.
+        $ty               = GHCA_ECD_Training_Year::course( $user_id, $course_id, $completed, $completed_ts );
+        $compliance_state = $ty['compliance_state'];
+        $lifespan_days    = $ty['lifespan_days'];
+        $expiration_ts    = $ty['expiration_ts'];
+        $expiration_label = $ty['expiration_label'];
+        $follows_year     = $ty['follows_training_year'];
+      } elseif ( class_exists( 'GHCA_Course_Lifespans' ) ) {
         $decorated = GHCA_Course_Lifespans::decorate( $course_id, $completed, $completed_ts );
         $compliance_state = $decorated['compliance_state'];
         $lifespan_days = $decorated['lifespan_days'];
@@ -295,7 +319,7 @@ final class GHCA_ECD_Data_Provider {
         $expiration_label = $decorated['expiration_label'];
       }
 
-      $items[] = array(
+      $item = array(
         'id'             => $course_id,
         'title'          => $title,
         'description'    => self::get_course_description( $course_id ),
@@ -312,6 +336,10 @@ final class GHCA_ECD_Data_Provider {
         'url'            => get_permalink( $course_id ) ?: home_url( '/my-courses/' ),
         'sort_order'     => self::course_sort_order( $title ),
       );
+      if ( null !== $follows_year ) {
+        $item['follows_training_year'] = $follows_year;
+      }
+      $items[] = $item;
     }
 
     usort(
@@ -493,8 +521,68 @@ final class GHCA_ECD_Data_Provider {
     return (int) learndash_get_setting( $course_id, 'certificate' ) > 0;
   }
 
+  /**
+   * Window and annual-hours threshold shown next to the due date while the training-year switch is on.
+   *
+   * @return array{window_label:string,window_missing:string,hours:int,requirement_label:string,requirement_set:bool,requirement_source:string,requirement_not_set:bool}
+   */
+  private static function training_year_summary( int $user_id ): array {
+    $window      = GHCA_ECD_Training_Year::window( $user_id );
+    $requirement = GHCA_ECD_Training_Year::requirement( $user_id );
+    return array(
+      'window_label'        => $window['label'],
+      'window_missing'      => $window['missing'],
+      'hours'               => $requirement['hours'],
+      'requirement_label'   => $requirement['label'],
+      'requirement_set'     => $requirement['set'],
+      'requirement_source'  => $requirement['source'],
+      // Unmapped role: the admin plugin defaults to 24 h and flags it (55 Pa. Code §6100.143).
+      'requirement_not_set' => 'default' === $requirement['source'],
+    );
+  }
+
+  /**
+   * The compliance cycle from the admin training-year API (switch on). Same keys as the 365-day cycle; the
+   * dates come only from due() and window(), with no date math here beyond counting days to the due day.
+   *
+   * @return array<string,mixed>
+   */
+  private static function get_training_year_cycle( int $user_id ): array {
+    $now    = time();
+    $due    = GHCA_ECD_Training_Year::due( $user_id );
+    $window = GHCA_ECD_Training_Year::window( $user_id );
+    $due_ts = $due['due_timestamp'];
+    $start  = $window['start_ts'];
+    // Kept so existing callers don't break; never used for a due date.
+    $platform_start = self::get_platform_start_timestamp( $user_id );
+
+    $due_label = $due['due_date_label'];
+    if ( '' === $due_label && $due_ts > 0 ) {
+      $due_label = wp_date( 'F j, Y', $due_ts );
+    }
+
+    return array(
+      'start_timestamp'  => $start,
+      'start_date'       => $start > 0 ? wp_date( 'Y-m-d', $start ) : '',
+      'start_date_label' => $start > 0 ? wp_date( 'F j, Y', $start ) : __( 'Not available', 'ghca-ecd' ),
+      'due_timestamp'    => $due_ts,
+      'due_date'         => $due_ts > 0 ? wp_date( 'Y-m-d', $due_ts ) : '',
+      // As returned, including "Hire date missing" / "Training year not configured" when there is no due date.
+      'due_date_label'   => $due_label,
+      'days_on_platform' => $platform_start ? (int) floor( max( 0, $now - $platform_start ) / DAY_IN_SECONDS ) : 0,
+      'days_remaining'   => $due_ts > 0 ? GHCA_ECD_Training_Year::days_until( $due_ts, $now ) : null,
+      'cycle_day'        => 0,
+      'cycle_number'     => 1,
+      'training_year'    => true,
+    );
+  }
+
   /** @return array<string,mixed> */
   private static function get_compliance_cycle( int $user_id ): array {
+    if ( GHCA_ECD_Training_Year::active() ) {
+      return self::get_training_year_cycle( $user_id );
+    }
+
     $empty = array(
       'start_timestamp'  => 0,
       'start_date'       => '',
@@ -598,12 +686,16 @@ final class GHCA_ECD_Data_Provider {
       'annual_complete'  => false,
     );
 
-    $start = self::get_platform_start_timestamp( $user_id );
-    if ( ! $start ) {
+    $cycle = self::get_compliance_cycle( $user_id );
+    if ( ! empty( $cycle['training_year'] ) ) {
+      // Switch on: the notice counts down to the admin due() date; no due date (hire date missing, not configured) means no notice.
+      if ( empty( $cycle['due_timestamp'] ) || null === $cycle['days_remaining'] ) {
+        return $empty;
+      }
+    } elseif ( ! self::get_platform_start_timestamp( $user_id ) ) {
       return $empty;
     }
 
-    $cycle            = self::get_compliance_cycle( $user_id );
     $days_on_platform = (int) $cycle['days_on_platform'];
     $days_remaining   = (int) $cycle['days_remaining'];
     $due_timestamp    = (int) $cycle['due_timestamp'];
@@ -612,7 +704,8 @@ final class GHCA_ECD_Data_Provider {
     $annual_complete  = self::is_annual_training_complete( $user_id, $courses );
     $in_notice_window = $days_remaining <= GHCA_Employee_Compliance_Dashboard::NOTICE_DAYS;
 
-    if ( ! $in_notice_window || ( $annual_complete && $days_remaining > 0 ) ) {
+    // The 365-day cycle never goes below 0; only a training-year due day that has passed does.
+    if ( ! $in_notice_window || ( $annual_complete && 0 !== $days_remaining ) ) {
       return $empty;
     }
 
@@ -630,7 +723,15 @@ final class GHCA_ECD_Data_Provider {
       );
     }
 
-    if ( 0 === $days_remaining ) {
+    if ( $days_remaining < 0 ) {
+      $level           = 'danger';
+      $countdown_label = __( 'Overdue', 'ghca-ecd' );
+      $message         = sprintf(
+        /* translators: %s: due date */
+        __( 'Your annual compliance training was due on %s. Please complete it as soon as possible.', 'ghca-ecd' ),
+        $due_date_label
+      );
+    } elseif ( 0 === $days_remaining ) {
       $level           = 'danger';
       $countdown_label = __( 'Due today', 'ghca-ecd' );
       $message         = __( 'Your annual compliance training is due today. Please complete it as soon as possible.', 'ghca-ecd' );

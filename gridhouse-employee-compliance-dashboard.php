@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Gridhouse Employee Compliance Dashboard
  * Description: Employee compliance home dashboard shortcodes for LearnDash + Elementor.
- * Version: 1.6.3
+ * Version: 1.6.4
  * Author: Gridhouse Digital
  * Author URI: https://gridhouse.digital
  * Text Domain: ghca-ecd
@@ -30,7 +30,7 @@ final class GHCA_Employee_Compliance_Dashboard {
   const OPTION_DUE_DATE     = 'ghca_compliance_due_date';
   const OPTION_CACHE_TTL    = 'ghca_ecd_cache_ttl';
   const OPTION_START_GROUPS = 'ghca_ecd_start_group_ids';
-  const VERSION             = '1.6.3';
+  const VERSION             = '1.6.4';
   const CYCLE_DAYS       = 365;
   const NOTICE_DAYS      = 90;
 
@@ -70,14 +70,18 @@ final class GHCA_Employee_Compliance_Dashboard {
    * @param int      $user_id The user ID.
    */
   public static function inject_traffic_light_class( string $class, $course, int $user_id ): string {
-    if ( ! class_exists( 'GHCA_Course_Lifespans' ) || ! $course || empty( $course->ID ) ) {
+    $training_year = GHCA_ECD_Training_Year::active();
+    if ( ( ! $training_year && ! class_exists( 'GHCA_Course_Lifespans' ) ) || ! $course || empty( $course->ID ) ) {
       return $class;
     }
 
     $completed    = function_exists( 'learndash_course_completed' ) ? (bool) learndash_course_completed( $user_id, $course->ID ) : false;
     $completed_ts = $completed && function_exists( 'learndash_user_get_course_completed_date' ) ? (int) learndash_user_get_course_completed_date( $user_id, $course->ID ) : 0;
 
-    $decorated = GHCA_Course_Lifespans::decorate( $course->ID, $completed, $completed_ts );
+    // Training-year switch on: the admin calculator owns per-course expiry (decorate() zeros annual ODP courses).
+    $decorated = $training_year
+      ? GHCA_ECD_Training_Year::course( (int) $user_id, (int) $course->ID, $completed, $completed_ts )
+      : GHCA_Course_Lifespans::decorate( $course->ID, $completed, $completed_ts );
     $state     = $decorated['compliance_state']; // current, expiring_soon, expired, incomplete
 
     return $class . ' ghca-traffic-light ghca-traffic-light--' . esc_attr( $state );
@@ -234,6 +238,7 @@ final class GHCA_Employee_Compliance_Dashboard {
   }
 }
 
+require_once __DIR__ . '/includes/class-training-year.php';
 require_once __DIR__ . '/includes/class-settings.php';
 require_once __DIR__ . '/includes/class-data-provider.php';
 require_once __DIR__ . '/includes/class-shortcodes.php';

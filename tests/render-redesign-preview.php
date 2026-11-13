@@ -278,6 +278,19 @@ $snapshot = array(
   'new_hire' => $newhire ? array( 'active' => true, 'complete' => false, 'at_risk' => true, 'days_remaining' => 10, 'deadline_ts' => $NOW + 10 * 86400, 'enrollment_ts' => $NOW - 20 * 86400, 'deadline_days' => 30 ) : array(),
   'new_hire_flagged' => false,
 );
+// ?ty=on|default|none: what the snapshot carries when the admin training-year switch is on (1.6.4).
+$ty = (string) ( $_GET['ty'] ?? '' );
+if ( in_array( $ty, array( 'on', 'default', 'none' ), true ) ) {
+  $snapshot['training_year'] = array(
+    'window_label'        => 'Jan 10, 2026 – Jan 9, 2027',
+    'window_missing'      => '',
+    'hours'               => 'none' === $ty ? 0 : ( 'default' === $ty ? 24 : 12 ),
+    'requirement_label'   => 'Direct Support Professional',
+    'requirement_set'     => 'default' !== $ty,
+    'requirement_source'  => 'default' === $ty ? 'default' : 'role_map',
+    'requirement_not_set' => 'default' === $ty,
+  );
+}
 
 $set = static function ( string $prop, $value ): void {
   $r = new ReflectionProperty( 'GHCA_ECD_Data_Provider', $prop );

@@ -801,7 +801,7 @@
   }
 
   // Build marker: type ghcaEcdRedesign in the browser console to see which script build the page runs.
-  window.ghcaEcdRedesign = { build: '1.6.3', drawer: false, viewer: false, photo: false };
+  window.ghcaEcdRedesign = { build: '1.6.4', drawer: false, viewer: false, photo: false };
 
   function init() {
     window.ghcaEcdRedesign.drawer = !!document.querySelector('.ghca-ecd-ui #gh-odp-drawer');

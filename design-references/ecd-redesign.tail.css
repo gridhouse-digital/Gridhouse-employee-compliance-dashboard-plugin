@@ -81,6 +81,8 @@
 :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-of { font-size: 16px; color: var(--gh-text-muted); }
 :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-kpis .gh-stat-val.gh-ecd-date { font-size: 20px; line-height: 28px; }
 :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-kpis .gh-stat-sub.gh-ecd-warn { color: var(--gh-status-warning-fg); font-weight: 600; }
+/* 1.6.4: training-year window and hours threshold under the due date (admin switch on only). */
+:is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-kpis .gh-stat-sub.gh-ecd-ty { font-size: 12px; line-height: 16px; overflow-wrap: anywhere; }
 :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-kpis .gh-bar { margin-top: 6px; }
 :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-ecd-kpis .gh-bar > span { display: block; height: 100%; border-radius: inherit; background: var(--gh-color-primary); }
 :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-ecd-statlink, :is(.ghca-ecd-ui, #ghca-ecd-ui-scope) .gh-app a.gh-ecd-statlink:is(:link, :visited, :hover, :focus, :active) { align-self: flex-start; color: var(--gh-agency-ink, var(--gh-text-link)); font-weight: 600; text-decoration: none; }
