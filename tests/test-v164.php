@@ -3,6 +3,7 @@
 // 1.6.4: with the admin training-year switch on, the dashboard takes its due date, training-year window, annual
 // hours threshold and per-course expiry from GHCA_ACD_Training_Year (admin 2.0.0-rc.2), and does no date math of its own.
 // With the switch off, or the API absent or partial, the output must be identical to 1.6.3.
+// 1.6.5: the "What's blocking my packet" card's hours threshold also comes from requirement() when the switch is on.
 //
 // The admin plugin is never loaded: GHCA_ACD_Training_Year is a stub with canned returns. Each scenario runs the real
 // get_snapshot(), the redesign Due date stat, the legacy status cards, the certificates model and the profile traffic
@@ -93,6 +94,19 @@ foreach ( array(
   check( "{$label}: no window / threshold labels", false === strpos( $new['kpis'] ?? '', 'data-ghca-ty' ) && false === strpos( $new['legacy'] ?? '', 'data-ghca-ty' ) && ! isset( $new['snapshot']['training_year'] ) );
 }
 $old = scenario( 'off', $base );
+check( 'baseline sanity: 1.6.3 packet card shows the fixed "10.5 of 24 hours"', false !== strpos( $old['blockers'] ?? '', 'ODP 6100 annual training: 10.5 of 24 hours' ) );
+$new = scenario( 'off', $repo );
+check( 'switch off: packet card byte-identical to 1.6.3', '' !== ( $old['blockers'] ?? '' ) && $old['blockers'] === ( $new['blockers'] ?? null ) );
+foreach ( array( 'none', 'partial-requirement', 'partial-enabled' ) as $name ) {
+  check( "packet card byte-identical to 1.6.3: {$name}", scenario( $name, $base )['blockers'] === ( scenario( $name, $repo )['blockers'] ?? null ) );
+}
+// rc.2 caveat: the API returns new-rule values even with the switch off. None may reach the page.
+$seen   = print_r( rendered_only( $new ), true );
+$leaked = array();
+foreach ( array( $new['canned']['window_label'], $new['canned']['due_date_label'], $new['canned']['courses'][102]['expiration_label'], $new['canned']['courses'][101]['expiration_label'], '12 hours', 'Role requirement not set', 'Training year:', 'role:direct-support-professional', 'follows_training_year' ) as $value ) {
+  if ( false !== strpos( $seen, (string) $value ) ) { $leaked[] = $value; }
+}
+check( 'switch off, API methods present: no API value leaks into the page or snapshot' . ( $leaked ? ' — leaked: ' . implode( ', ', $leaked ) : '' ), array() === $leaked );
 check( 'baseline sanity: 1.6.3 shows the 365-day due date and a notice', '' !== ( $old['snapshot']['compliance_due_date_label'] ?? '' ) && ! empty( $old['snapshot']['compliance_notification']['show'] ) );
 $old = scenario( 'off-newhire', $base );
 check( 'baseline sanity: 1.6.3 new hire without a deadline falls back to the option date', 'January 1, 2030' === ( $old['snapshot']['compliance_due_date_label'] ?? '' ) );
@@ -133,7 +147,17 @@ $j = scenario( 'on-default', $repo );
 check( 'role unmapped (source default): "Role requirement not set" next to 24 hours', false !== strpos( $j['kpis'], 'data-ghca-ty="hours">24 hours required this training year<' ) && false !== strpos( $j['kpis'], 'data-ghca-ty="flag">Role requirement not set<' ) && false !== strpos( $j['legacy'], 'Role requirement not set' ) );
 check( 'role unmapped: never the old "Not set — 24 h assumed" wording', false === stripos( $j['kpis'] . $j['legacy'], '24 h assumed' ) );
 
+$j = scenario( 'on', $repo );
+check( 'packet card, switch on: threshold from requirement() (10.5 of 12 hours), no flag for a mapped role', false !== strpos( $j['blockers'], 'ODP 6100 annual training: 10.5 of 12 hours' ) && false === strpos( $j['blockers'], 'of 24 hours' ) && false === strpos( $j['blockers'], 'Role requirement not set' ) );
+$j = scenario( 'on-met', $repo );
+check( 'packet card, switch on: 14 hours meets a 12-hour role, no hours blocker (1.6.3 would block at 24)', false === strpos( $j['blockers'], 'ODP 6100 annual training' ) );
+$j = scenario( 'on-default', $repo );
+check( 'packet card, unmapped role (source default): "10.5 of 24 hours" with "Role requirement not set"', false !== strpos( $j['blockers'], 'ODP 6100 annual training: 10.5 of 24 hours' ) && false !== strpos( $j['blockers'], 'Role requirement not set · Hours count once the course is complete' ) );
+$j = scenario( 'on-unset', $repo );
+check( 'set false (source role_map): flagged on the packet card and the Due date card', false !== strpos( $j['blockers'], 'Role requirement not set' ) && false !== strpos( $j['kpis'], 'data-ghca-ty="flag"' ) );
+check( 'requirement key "role:<slug>" is never matched on (decided by source / set / hours)', false === strpos( (string) file_get_contents( $repo . '/includes/class-redesign.php' ) . (string) file_get_contents( $repo . '/includes/class-data-provider.php' ), "requirement['key']" ) );
 $j = scenario( 'on-notrequired', $repo );
+check( 'packet card, 0 hours required: no hours blocker', false === strpos( $j['blockers'], 'ODP 6100 annual training' ) );
 check( 'role not required (0 hours): "Annual hours not required", no flag', false !== strpos( $j['kpis'], 'data-ghca-ty="hours">Annual hours not required<' ) && false === strpos( $j['kpis'], 'Role requirement not set' ) );
 
 $j    = scenario( 'on-missing', $repo );
@@ -196,6 +220,9 @@ function run_scenario( string $name, string $plugin_dir, int $clock ): void {
   );
   if ( 'on-default' === $name ) { $canned['hours'] = 24; $canned['source'] = 'default'; }
   if ( 'on-notrequired' === $name ) { $canned['hours'] = 0; }
+  if ( 'on-unset' === $name ) { $canned['source'] = 'role_map'; $canned['set'] = false; }
+  // Packet hours on record (admin audit calculator): short of 12 and 24, or 14 (meets 12).
+  $canned['audit_hrs'] = 'on-met' === $name ? 14.0 : 10.5;
   if ( 'on-missing' === $name || 'on-notconfigured' === $name ) {
     $canned['due_timestamp']  = 0;
     $canned['due_date_label'] = 'on-missing' === $name ? 'Hire date missing' : 'Training year not configured';
@@ -232,6 +259,8 @@ function run_scenario( string $name, string $plugin_dir, int $clock ): void {
   $snapshot = GHCA_ECD_Data_Provider::get_snapshot();
   $cycle    = $cycle_m->invoke( null, 7 );
   $kpis     = (string) $kpis_m->invoke( null, $snapshot );
+  $block_m  = new ReflectionMethod( 'GHCA_ECD_Redesign', 'blockers_html' );
+  $blockers = (string) $block_m->invoke( null, $snapshot );
   $legacy   = (string) GHCA_ECD_Shortcodes::render_status_cards();
 
   $course_due = array();
@@ -251,6 +280,7 @@ function run_scenario( string $name, string $plugin_dir, int $clock ): void {
     'snapshot'      => array_intersect_key( $snapshot, array_flip( $keep ) ),
     'cycle'         => $cycle,
     'kpis'          => $kpis,
+    'blockers'      => $blockers,
     'legacy'        => $legacy,
     'course_due'    => $course_due,
     'traffic'       => $traffic,
@@ -287,7 +317,7 @@ function t_api( string $method, array $args ) {
         'label'      => $c['window_label'],
       );
     case 'requirement':
-      return array( 'key' => 'dsp', 'label' => 'Direct Support Professional', 'hours' => $c['hours'], 'set' => 'default' !== $c['source'], 'source' => $c['source'] );
+      return array( 'key' => 'role:direct-support-professional', 'label' => 'Direct Support Professional', 'hours' => $c['hours'], 'set' => $c['set'] ?? 'default' !== $c['source'], 'source' => $c['source'] );
     case 'course':
       $GLOBALS['t']['calls']['course_args'][] = array( $args[0], $args[1], $args[2], $args[3] );
       return $c['courses'][ $args[1] ];
@@ -339,6 +369,12 @@ function t_define_admin_stubs(): void {
     }
 
     // The admin per-course lifespan helper (the 1.6.3 path).
+    // The admin packet calculator behind "What's blocking my packet" (read-only, same in 1.6.3 and 1.6.4).
+    class GHCA_Audit_Calculator {
+      public static function calculate_employee_audit_data( array $employee, string $tracker, array $mappings ): array {
+        return array( 'total_annual_hrs' => $GLOBALS['t']['canned']['audit_hrs'], 'category_statuses' => array() );
+      }
+    }
     class GHCA_Course_Lifespans {
       const OPTION_LIFESPANS = 'ghca_course_lifespans';
       const OPTION_WARNING_DAYS = 'ghca_course_warning_days';

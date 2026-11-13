@@ -2,6 +2,30 @@
 
 All notable changes to the Gridhouse Employee Compliance Dashboard are documented here.
 
+## [1.6.5]
+
+Tested against the admin 2.0.0-rc.2 contract (commit 11a7c64), using stand-ins for the admin plugin.
+
+### Changed
+
+- **"What's blocking my packet", switch on:** the annual hours threshold is `requirement()['hours']` instead of
+  the fixed 24.
+  - 0 hours means not required, so no hours blocker is shown.
+  - An unmapped role (`source` is `default`, or `set` is false) shows "Role requirement not set" next to the
+    hours, the same as the Due date card. The Due date card now uses the same rule.
+  - `requirement()['key']` (which can be `role:<slug>`) is never matched on.
+- Switch off, admin plugin absent, or API partial: the packet card is byte-identical to 1.6.3. `tests/test-v164.php`
+  checks this.
+
+### Known dependency
+
+- In admin rc.2, `due()`, `window()`, `requirement()` and `course()` return new-rule values even when the switch is
+  off. This plugin calls them only after `enabled()` is true. A test proves no API value reaches the page while
+  `enabled()` is false.
+- In admin rc.2, `course()` ignores the completion timestamp for annual courses; the fix is due in admin rc.3. This
+  plugin passes `course()` values through unchanged and adds no workaround or date maths of its own. Annual
+  per-course expiry shown with the switch on is only as correct as the installed admin build.
+
 ## [1.6.4]
 
 Ships with admin 2.0.0-rc.2. Uses the admin training-year calculator (`GHCA_ACD_Training_Year`) when the admin

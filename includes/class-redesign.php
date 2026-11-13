@@ -932,9 +932,11 @@ final class GHCA_ECD_Redesign {
    * @param array<int,array<string,mixed>> $courses  This plugin's enrolled-course rows.
    * @param array<int,array<string,mixed>> $mappings Admin audit mapping: course id => config (odp_category, coverage).
    * @param array<int,string>              $cert_urls Course id => certificate link ('' when none).
+   * @param array<string,mixed>|null       $requirement The admin training-year requirement() (hours, set, source) while
+   *                                                    its switch is on; null keeps the fixed 24-hour threshold (1.6.3).
    * @return array<int,array{key:string,tone:string,text:string,sub:string,url:string,link:string}>
    */
-  public static function blocking_reasons( array $audit, string $tracker, array $courses, array $mappings, array $cert_urls ): array {
+  public static function blocking_reasons( array $audit, string $tracker, array $courses, array $mappings, array $cert_urls, ?array $requirement = null ): array {
     $by_id = array();
     foreach ( $courses as $c ) {
       $by_id[ (int) ( $c['id'] ?? 0 ) ] = $c;
@@ -986,14 +988,21 @@ final class GHCA_ECD_Redesign {
         $reasons[] = array( 'key' => 'orientation', 'tone' => 'warning', 'text' => __( 'Orientation is not complete', 'ghca-ecd' ), 'sub' => __( 'Finish your orientation courses', 'ghca-ecd' ), 'url' => (string) ( $first_open['url'] ?? '' ), 'link' => $first_open ? sprintf( /* translators: %s: course */ __( 'Continue %s', 'ghca-ecd' ), $title( $first_open ) ) : '' );
       }
 
-      // ODP 6100 annual hours short.
-      if ( 'annual' === $tracker && isset( $audit['total_annual_hrs'] ) && (float) $audit['total_annual_hrs'] < 24 ) {
+      // ODP 6100 annual hours short. Training-year switch on: the threshold is the admin requirement() hours
+      // (0 = not required, so no hours blocker); otherwise the fixed 24 hours, as in 1.6.3.
+      $need_hrs = null === $requirement ? 24 : max( 0, (int) ( $requirement['hours'] ?? 0 ) );
+      if ( 'annual' === $tracker && $need_hrs > 0 && isset( $audit['total_annual_hrs'] ) && (float) $audit['total_annual_hrs'] < $need_hrs ) {
         $have      = round( (float) $audit['total_annual_hrs'], 1 );
+        $sub       = __( 'Hours count once the course is complete', 'ghca-ecd' );
+        // Unmapped role: the admin plugin assumed the default hours, so say so, as the Due date card does.
+        if ( null !== $requirement && ( 'default' === ( $requirement['source'] ?? '' ) || empty( $requirement['set'] ) ) ) {
+          $sub = __( 'Role requirement not set', 'ghca-ecd' ) . ' · ' . $sub;
+        }
         $reasons[] = array(
           'key'  => 'hours',
           'tone' => 'warning',
-          'text' => sprintf( /* translators: 1: hours done, 2: hours required */ __( 'ODP 6100 annual training: %1$s of %2$s hours', 'ghca-ecd' ), rtrim( rtrim( number_format( $have, 1, '.', '' ), '0' ), '.' ), '24' ),
-          'sub'  => __( 'Hours count once the course is complete', 'ghca-ecd' ),
+          'text' => sprintf( /* translators: 1: hours done, 2: hours required */ __( 'ODP 6100 annual training: %1$s of %2$s hours', 'ghca-ecd' ), rtrim( rtrim( number_format( $have, 1, '.', '' ), '0' ), '.' ), (string) $need_hrs ),
+          'sub'  => $sub,
           'url'  => (string) ( $first_open['url'] ?? '' ),
           'link' => $first_open ? sprintf( /* translators: %s: course */ __( 'Continue %s', 'ghca-ecd' ), $title( $first_open ) ) : '',
         );
@@ -1088,7 +1097,8 @@ final class GHCA_ECD_Redesign {
       $courses[]            = $c;
       $cert_urls[ $cid ]    = ! empty( $c['completed'] ) ? GHCA_ECD_Data_Provider::get_certificate_url( (int) $data['user_id'], $cid ) : '';
     }
-    $reasons = self::blocking_reasons( $packet['audit'], $packet['tracker'], $courses, $packet['mappings'], $cert_urls );
+    $requirement = GHCA_ECD_Training_Year::active() ? GHCA_ECD_Training_Year::requirement( (int) $data['user_id'] ) : null;
+    $reasons     = self::blocking_reasons( $packet['audit'], $packet['tracker'], $courses, $packet['mappings'], $cert_urls, $requirement );
 
     $h  = '<section class="gh-card gh-ecd-block" aria-labelledby="gh-ecd-block-t">';
     $h .= '<div class="gh-card-hd"><div><h2 class="gh-h4" id="gh-ecd-block-t">' . esc_html__( "What's blocking my packet", 'ghca-ecd' ) . '</h2><span class="gh-small gh-muted">' . esc_html( 'orientation' === $packet['tracker'] ? __( 'Your orientation packet', 'ghca-ecd' ) : __( 'Your annual training packet', 'ghca-ecd' ) ) . '</span></div>';

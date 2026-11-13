@@ -536,8 +536,9 @@ final class GHCA_ECD_Data_Provider {
       'requirement_label'   => $requirement['label'],
       'requirement_set'     => $requirement['set'],
       'requirement_source'  => $requirement['source'],
-      // Unmapped role: the admin plugin defaults to 24 h and flags it (55 Pa. Code §6100.143).
-      'requirement_not_set' => 'default' === $requirement['source'],
+      // Unmapped role: the admin plugin defaults to 24 h and flags it (55 Pa. Code §6100.143). Decided by source and
+      // set only; requirement()['key'] (e.g. "role:<slug>") is never matched on.
+      'requirement_not_set' => 'default' === $requirement['source'] || ! $requirement['set'],
     );
   }
 
