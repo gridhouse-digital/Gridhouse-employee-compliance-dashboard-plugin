@@ -2,6 +2,25 @@
 
 All notable changes to the Gridhouse Employee Compliance Dashboard are documented here.
 
+## [1.6.6]
+
+### Fixed
+
+- **A failing admin API no longer makes an employee look exempt.** With the training-year switch on, if
+  `GHCA_ACD_Training_Year::requirement()` threw, returned a non-array, or returned no numeric `hours`,
+  `GHCA_ECD_Training_Year::requirement()` gave 0 hours. The Due date card then showed "Annual hours not required"
+  and the packet card skipped the hours blocker. It now falls back to the unmapped-role default: 24 hours,
+  `set` false, `source` `default`, shown as "Role requirement not set". The error is still logged as
+  `[ghca-ecd] Training-year API requirement() failed …`.
+  - `active()` is unchanged: if `enabled()` itself throws, the API counts as off and the dashboard stays on the
+    1.6.3 path.
+- Moved a stray `@param` docblock in `class-shortcodes.php` back above `get_due_days_remaining()` (no code change).
+
+### Known dependency
+
+- Annual-course expiry badges still depend on admin 2.0.0-rc.3. In rc.2, `course()` ignores the completion
+  timestamp for annual courses. This plugin passes `course()` values through unchanged and has no workaround.
+
 ## [1.6.5]
 
 Tested against the admin 2.0.0-rc.2 contract (commit 11a7c64), using stand-ins for the admin plugin.

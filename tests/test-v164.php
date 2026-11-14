@@ -4,6 +4,7 @@
 // hours threshold and per-course expiry from GHCA_ACD_Training_Year (admin 2.0.0-rc.2), and does no date math of its own.
 // With the switch off, or the API absent or partial, the output must be identical to 1.6.3.
 // 1.6.5: the "What's blocking my packet" card's hours threshold also comes from requirement() when the switch is on.
+// 1.6.6: if requirement() fails while the switch is on, the fallback is 24 h + "Role requirement not set", never 0 / exempt.
 //
 // The admin plugin is never loaded: GHCA_ACD_Training_Year is a stub with canned returns. Each scenario runs the real
 // get_snapshot(), the redesign Due date stat, the legacy status cards, the certificates model and the profile traffic
@@ -178,6 +179,14 @@ check( 'due day passed: negative days and an Overdue notice (no 365-day roll-ove
 $j = scenario( 'on-newhire', $repo );
 check( 'switch on, new hire with no deadline: due date from due(), not the option', ( $j['canned']['due_date_label'] ?? '?' ) === ( $j['snapshot']['compliance_due_date_label'] ?? '' ) && false === strpos( json_encode( $j ), 'January 1, 2030' ) );
 
+foreach ( array( 'on-req-throws' => 'requirement() throws', 'on-req-nohours' => 'requirement() has no hours', 'on-req-notarray' => 'requirement() returns a non-array' ) as $name => $label ) {
+  $j = scenario( $name, $repo );
+  $t = $j['snapshot']['training_year'] ?? array();
+  check( "switch on, {$label}: snapshot falls back to 24 h, source default, set false, flagged", 24 === ( $t['hours'] ?? null ) && 'default' === ( $t['requirement_source'] ?? '' ) && false === ( $t['requirement_set'] ?? null ) && true === ( $t['requirement_not_set'] ?? null ) );
+  check( "switch on, {$label}: Due date card shows 24 hours + \"Role requirement not set\", never \"not required\"", false !== strpos( $j['kpis'] ?? '', 'data-ghca-ty="hours">24 hours required this training year<' ) && false !== strpos( $j['kpis'] ?? '', 'data-ghca-ty="flag">Role requirement not set<' ) && false === strpos( ( $j['kpis'] ?? '' ) . ( $j['legacy'] ?? '' ), 'Annual hours not required' ) );
+  check( "switch on, {$label}: packet card blocks at 24 hours with the flag", false !== strpos( $j['blockers'] ?? '', 'ODP 6100 annual training: 10.5 of 24 hours' ) && false !== strpos( $j['blockers'] ?? '', 'Role requirement not set' ) );
+  check( "switch on, {$label}: the other API values still come through (due date from due())", ( $j['canned']['due_date_label'] ?? '?' ) === ( $j['snapshot']['compliance_due_date_label'] ?? '' ) );
+}
 $j = scenario( 'on-throws', $repo );
 check( 'admin API throws: dashboard still renders, no fatal', isset( $j['kpis'] ) && false !== strpos( $j['kpis'], 'Due date' ) );
 
@@ -236,6 +245,7 @@ function run_scenario( string $name, string $plugin_dir, int $clock ): void {
     'canned'     => $canned,
     'enabled'    => 0 === strpos( $name, 'on' ) || 0 === strpos( $name, 'partial' ),
     'throws'     => 'on-throws' === $name,
+    'req_mode'   => array( 'on-req-throws' => 'throw', 'on-req-nohours' => 'nohours', 'on-req-notarray' => 'notarray' )[ $name ] ?? '',
     'registered' => gmdate( 'Y-m-d H:i:s', $now - 300 * $day ), // 365-day cycle: 65 days left => an info notice in 1.6.3
     'new_hire'   => in_array( $name, array( 'off-newhire', 'on-newhire' ), true ),
     'calls'      => array( 'api' => array(), 'decorate' => 0, 'course_args' => array() ),
@@ -299,6 +309,15 @@ function run_scenario( string $name, string $plugin_dir, int $clock ): void {
 function t_api( string $method, array $args ) {
   $GLOBALS['t']['calls']['api'][] = $method;
   $c = $GLOBALS['t']['canned'];
+  if ( 'requirement' === $method && 'throw' === $GLOBALS['t']['req_mode'] ) {
+    throw new RuntimeException( 'admin requirement() exploded' );
+  }
+  if ( 'requirement' === $method && 'nohours' === $GLOBALS['t']['req_mode'] ) {
+    return array( 'key' => 'role:x', 'label' => 'X', 'set' => true, 'source' => 'role_map' );
+  }
+  if ( 'requirement' === $method && 'notarray' === $GLOBALS['t']['req_mode'] ) {
+    return 'oops';
+  }
   if ( $GLOBALS['t']['throws'] && 'enabled' !== $method ) {
     throw new RuntimeException( 'admin calculator exploded' );
   }

@@ -77,9 +77,24 @@ final class GHCA_ECD_Training_Year {
     );
   }
 
-  /** @return array{key:string,label:string,hours:int,set:bool,source:string} */
+  /**
+   * Only called once active() is true. If the admin result can't be read (it threw, isn't an array, or has no
+   * numeric hours), this returns the unmapped-role default: 24 hours, flagged "Role requirement not set". It never
+   * returns 0 hours, which would make an employee look exempt because the admin plugin errored.
+   *
+   * @return array{key:string,label:string,hours:int,set:bool,source:string}
+   */
   public static function requirement( int $user_id ): array {
     $raw = self::call( 'requirement', array( $user_id ) );
+    if ( ! isset( $raw['hours'] ) || ! is_numeric( $raw['hours'] ) ) {
+      return array(
+        'key'    => '',
+        'label'  => __( 'Role requirement not set', 'ghca-ecd' ),
+        'hours'  => 24,
+        'set'    => false,
+        'source' => 'default',
+      );
+    }
     return array(
       'key'    => (string) ( $raw['key'] ?? '' ),
       'label'  => (string) ( $raw['label'] ?? '' ),

@@ -384,7 +384,6 @@ final class GHCA_ECD_Shortcodes {
     }
   }
 
-  /** @param array<string,mixed> $data */
   /**
    * Training-year window and hours threshold under the legacy Compliance Due Date KPI (admin switch on only).
    * Returns '' when the switch is off, so the legacy markup is byte-identical to 1.6.3.
@@ -399,6 +398,7 @@ final class GHCA_ECD_Shortcodes {
     return $html;
   }
 
+  /** @param array<string,mixed> $data */
   private static function get_due_days_remaining( array $data, bool $is_new_hire ): ?int {
     if ( $is_new_hire && isset( $data['new_hire']['days_remaining'] ) && is_numeric( $data['new_hire']['days_remaining'] ) ) {
       return (int) $data['new_hire']['days_remaining'];
