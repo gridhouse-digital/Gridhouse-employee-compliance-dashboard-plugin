@@ -111,14 +111,17 @@ final class GHCA_ECD_Data_Provider {
     $training_year   = GHCA_ECD_Training_Year::active();
     $new_hire        = self::get_new_hire_status( $user_id );
     $courses         = ( ! empty( $new_hire['active'] ) && empty( $new_hire['complete'] ) )
-      ? self::map_new_hire_courses( $new_hire )
+      ? self::map_new_hire_courses( $new_hire, $user_id )
       : self::get_required_courses( $user_id );
     $completed_count = 0;
     $started_count   = 0;
     $in_progress     = null;
     $not_started     = null;
+    $first_open      = null;
     $certificate_url = '';
 
+    // Next course: the first unlocked in-progress course, else the first unlocked not-started one (LearnDash
+    // prerequisites unmet = locked). If every incomplete course is locked, the first incomplete one, shown as locked.
     foreach ( $courses as $course ) {
       if ( $course['completed'] ) {
         ++$completed_count;
@@ -126,19 +129,25 @@ final class GHCA_ECD_Data_Provider {
         if ( $cert ) {
           $certificate_url = $cert;
         }
-      } elseif ( $course['status'] === 'in_progress' ) {
+        continue;
+      }
+      if ( null === $first_open ) {
+        $first_open = $course;
+      }
+      $locked = ! empty( $course['locked'] );
+      if ( $course['status'] === 'in_progress' ) {
         ++$started_count;
-        if ( null === $in_progress ) {
+        if ( null === $in_progress && ! $locked ) {
           $in_progress = $course;
         }
-      } elseif ( null === $not_started ) {
+      } elseif ( null === $not_started && ! $locked ) {
         $not_started = $course;
       }
     }
 
     $total        = count( $courses );
     $all_complete = $total > 0 && $completed_count === $total;
-    $next_course  = $in_progress ?: $not_started;
+    $next_course  = $in_progress ?: ( $not_started ?: $first_open );
     $continue_url = $next_course['url'] ?? home_url( '/my-courses/' );
     $module_index = 1;
 
@@ -244,7 +253,8 @@ final class GHCA_ECD_Data_Provider {
           $total
         ),
         'url'            => $next_course['url'],
-        'button_label'   => $next_course['status'] === 'in_progress' ? __( 'Resume Course', 'ghca-ecd' ) : __( 'Start Course', 'ghca-ecd' ),
+        'locked'         => ! empty( $next_course['locked'] ),
+        'button_label'   =>$next_course['status'] === 'in_progress' ? __( 'Resume Course', 'ghca-ecd' ) : __( 'Start Course', 'ghca-ecd' ),
       ) : null,
       'continue_url'              => $continue_url,
       'compliance_notification'   => self::get_compliance_notification( $user_id, $new_hire ),
@@ -342,12 +352,7 @@ final class GHCA_ECD_Data_Provider {
       $items[] = $item;
     }
 
-    usort(
-      $items,
-      static function ( array $a, array $b ): int {
-        return $a['sort_order'] <=> $b['sort_order'];
-      }
-    );
+    $items = self::sort_courses( $items );
 
     self::$required_courses[ $user_id ] = $items;
 
@@ -373,6 +378,37 @@ final class GHCA_ECD_Data_Provider {
     }
 
     return wp_trim_words( $raw, 28, '…' );
+  }
+
+  /**
+   * LearnDash course order. Courses with a menu_order (> 0) come first, ascending; courses without one follow, by
+   * the title rule in course_sort_order() (ORIENTATION, MODULE n, the rest); ties go to the lower course ID. An
+   * ORIENTATION course with no menu_order still goes first. Sites that never set menu_order keep the title order.
+   *
+   * @param array<int,array<string,mixed>> $items Rows with 'id' and 'sort_order' (= course_sort_order( title )).
+   * @return array<int,array<string,mixed>>
+   */
+  private static function sort_courses( array $items ): array {
+    $keys = array();
+    foreach ( $items as $i => $item ) {
+      $id         = (int) $item['id'];
+      $menu_order = $id > 0 ? (int) get_post_field( 'menu_order', $id ) : 0;
+      $by_title   = (int) $item['sort_order'];
+      if ( $menu_order > 0 ) {
+        $keys[ $i ] = array( 1, $menu_order, $id );
+      } elseif ( 0 === $by_title && preg_match( '/ORIENTATION/i', (string) $item['title'] ) ) {
+        $keys[ $i ] = array( 0, 0, $id );
+      } else {
+        $keys[ $i ] = array( 2, $by_title, $id );
+      }
+    }
+    uksort(
+      $items,
+      static function ( $a, $b ) use ( $keys ): int {
+        return $keys[ $a ] <=> $keys[ $b ];
+      }
+    );
+    return array_values( $items );
   }
 
   private static function course_sort_order( string $title ): int {
@@ -416,16 +452,19 @@ final class GHCA_ECD_Data_Provider {
   }
 
   /** @param array<string,mixed> $new_hire @return array<int,array<string,mixed>> */
-  private static function map_new_hire_courses( array $new_hire ): array {
+  private static function map_new_hire_courses( array $new_hire, int $user_id ): array {
     $items = array();
 
     foreach ( (array) ( $new_hire['courses'] ?? array() ) as $course ) {
-      $items[] = array(
-        'id'             => (int) ( $course['id'] ?? 0 ),
+      $id        = (int) ( $course['id'] ?? 0 );
+      $completed = ! empty( $course['completed'] );
+      $items[]   = array(
+        'id'             => $id,
         'title'          => (string) ( $course['title'] ?? '' ),
-        'description'    => self::get_course_description( (int) ( $course['id'] ?? 0 ) ),
+        'description'    => self::get_course_description( $id ),
         'status'         => (string) ( $course['status'] ?? 'not_started' ),
-        'completed'      => ! empty( $course['completed'] ),
+        'completed'      => $completed,
+        'locked'         => ! $completed && $id > 0 && self::prerequisites_lock( $id, $user_id ),
         'progress'       => (int) ( $course['progress'] ?? 0 ),
         'progress_label' => (string) ( $course['progress_label'] ?? '0%' ),
         'url'            => (string) ( $course['url'] ?? home_url( '/my-courses/' ) ),
@@ -433,14 +472,7 @@ final class GHCA_ECD_Data_Provider {
       );
     }
 
-    usort(
-      $items,
-      static function ( array $a, array $b ): int {
-        return $a['sort_order'] <=> $b['sort_order'];
-      }
-    );
-
-    return $items;
+    return self::sort_courses( $items );
   }
 
   private static function format_due_date( string $raw ): string {

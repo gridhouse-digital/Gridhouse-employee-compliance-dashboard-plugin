@@ -2,6 +2,34 @@
 
 All notable changes to the Gridhouse Employee Compliance Dashboard are documented here.
 
+## [1.6.7]
+
+### Fixed
+
+- **"Next Required Course" follows the LearnDash course order.** Courses were sorted by title only ("ORIENTATION"
+  first, then "MODULE n", everything else tied), so ties kept the incoming order. For new hires that order is the
+  admin group list, newest course ID first. Both sort paths (`get_required_courses()` and
+  `map_new_hire_courses()`) now use the course's `menu_order`:
+  1. courses with `menu_order` > 0 first, ascending;
+  2. courses with no `menu_order` (0) after them, by the old title rule (ORIENTATION, MODULE n, the rest);
+  3. ties go to the lower course ID.
+
+  An ORIENTATION course with no `menu_order` still goes first. Sites that never set `menu_order` and use
+  "Module n" titles keep the 1.6.6 order. One difference there: courses whose titles tie under the title rule
+  are now ordered by course ID instead of arrival order.
+- **The next course skips courses whose LearnDash prerequisites aren't met.** The pick is the first unlocked
+  in-progress course, then the first unlocked not-started one. If every incomplete course is locked, the card shows
+  the first incomplete course with the Locked chip instead of going blank. New-hire course rows now carry `locked`
+  too, and `next_course` in the snapshot has a `locked` flag. "Module x of y" / "Course x of y" follow the new
+  order.
+  - Found on Akanso: a new hire who had finished Orientation (135) was sent to Fatal Five (2905), whose
+    prerequisite Abuse Prevention (1597) wasn't done, instead of Employee Policies & Fillable Forms (1469).
+
+### Notes
+
+- The snapshot cache key includes the plugin version, so 1.6.6 snapshots are not reused after the update.
+- No change to the admin plugin, `class-cert-packet.php`, the training-year code or `policies_status()`.
+
 ## [1.6.6]
 
 ### Fixed
